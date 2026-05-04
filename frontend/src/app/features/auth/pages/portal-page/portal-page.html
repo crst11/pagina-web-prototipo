@@ -1,0 +1,455 @@
+<div class="page-shell portal-shell">
+  <header class="hero-shell portal-hero" [style.background]="portalHeroBackground()">
+    <nav class="topbar">
+      <a class="brand" routerLink="/">
+        <img class="brand-logo" src="/assets/images/localshop-logo-small.png" alt="LocalShop" />
+        <div class="brand-copy">
+          <strong>LocalShop</strong>
+          <span>Portal empresarial para registrar, editar y publicar tu empresa</span>
+        </div>
+      </a>
+
+      <div class="topbar-links">
+        <a routerLink="/">Inicio</a>
+        @if (isAuthenticated() && currentBusiness(); as business) {
+          <a [routerLink]="['/empresa', business.slug]">Perfil publico</a>
+        }
+        @if (cartCount() > 0) {
+          <a routerLink="/carrito">Carrito</a>
+        }
+      </div>
+
+      @if (isAuthenticated()) {
+        <div class="topbar-actions">
+          <button class="ghost-button" type="button" (click)="logout()">Cerrar sesion</button>
+        </div>
+      }
+    </nav>
+
+    @if (!isAuthenticated()) {
+      <section class="portal-hero-grid">
+        <article class="portal-intro-card">
+          <p class="section-kicker">Portal empresarial</p>
+          <h1>Registra tu negocio o entra a tu sesion desde una pagina mas clara y ordenada.</h1>
+          <p class="hero-description">
+            Crea tu perfil, sube productos, cambia banners y mantén visible tu vitrina en LocalShop desde un solo
+            espacio.
+          </p>
+
+          <div class="portal-example-row">
+            <article class="example-chip">
+              <strong>Casa Nube Taller</strong>
+              <span>Regalos artesanales</span>
+            </article>
+            <article class="example-chip">
+              <strong>Fogon de Barrio</strong>
+              <span>Catering local</span>
+            </article>
+            <article class="example-chip">
+              <strong>Taller Fulgor</strong>
+              <span>Papeleria creativa</span>
+            </article>
+          </div>
+        </article>
+
+        <section class="portal-auth-card">
+          <div class="auth-switch">
+            <button class="tab-button" [class.active]="authMode() === 'register'" type="button" (click)="authMode.set('register')">
+              Registrarse
+            </button>
+            <button class="tab-button" [class.active]="authMode() === 'login'" type="button" (click)="authMode.set('login')">
+              Iniciar sesion
+            </button>
+          </div>
+
+          @if (authFeedback(); as status) {
+            <p class="feedback admin-banner" [class.error]="status.type === 'error'">{{ status.message }}</p>
+          }
+
+          @if (authMode() === 'register') {
+            <form #registerNgForm="ngForm" class="portal-form-card" (ngSubmit)="submitRegister(registerNgForm)">
+              <div class="admin-card-head">
+                <div>
+                  <p class="section-kicker">Nuevo perfil</p>
+                  <h3>Crea tu empresa</h3>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <label>
+                  Responsable
+                  <input [(ngModel)]="registerForm.ownerName" name="registerOwnerName" placeholder="Ejemplo: Juliana Mena" required type="text" />
+                </label>
+
+                <label>
+                  Empresa
+                  <input [(ngModel)]="registerForm.businessName" name="registerBusinessName" placeholder="Ejemplo: Casa Nube Taller" required type="text" />
+                </label>
+
+                <label>
+                  Correo de acceso
+                  <input [(ngModel)]="registerForm.email" name="registerEmail" placeholder="Ejemplo: hola@casanube.co" required type="email" />
+                </label>
+
+                <label>
+                  Contrasena
+                  <input [(ngModel)]="registerForm.password" name="registerPassword" placeholder="Crea una contrasena segura" required type="password" />
+                </label>
+
+                <label>
+                  Telefono o WhatsApp
+                  <input [(ngModel)]="registerForm.phone" name="registerPhone" placeholder="Ejemplo: 3004567890" required type="text" />
+                </label>
+
+                <label>
+                  Ciudad
+                  <input [(ngModel)]="registerForm.city" name="registerCity" placeholder="Ejemplo: Bogota" required type="text" />
+                </label>
+
+                <label>
+                  Direccion
+                  <input [(ngModel)]="registerForm.address" name="registerAddress" placeholder="Ejemplo: Calle 57 # 14-22" required type="text" />
+                </label>
+
+                <label>
+                  Frase corta
+                  <input [(ngModel)]="registerForm.tagline" name="registerTagline" placeholder="Ejemplo: Regalos locales con acabados hechos a mano" required type="text" />
+                </label>
+
+                <label>
+                  Tiempo de entrega
+                  <input [(ngModel)]="registerForm.shippingLeadTime" name="registerShippingLeadTime" placeholder="Ejemplo: 24 a 48 horas" required type="text" />
+                </label>
+
+                <label>
+                  Compra minima
+                  <input [(ngModel)]="registerForm.minimumOrderAmount" name="registerMinimumOrderAmount" min="0" placeholder="Ejemplo: 30000" required type="number" />
+                </label>
+
+                <label>
+                  Sitio web
+                  <input [(ngModel)]="registerForm.websiteUrl" name="registerWebsiteUrl" placeholder="Ejemplo: https://casanube.co" type="text" />
+                </label>
+
+                <label class="form-note">
+                  Descripcion de la empresa
+                  <textarea [(ngModel)]="registerForm.description" name="registerDescription" placeholder="Cuéntale a tus clientes qué vendes, cuál es tu estilo y para quién trabajas." required rows="4"></textarea>
+                </label>
+              </div>
+
+              <button class="submit-button" type="submit">Crear perfil</button>
+            </form>
+          } @else {
+            <form #loginNgForm="ngForm" class="portal-form-card" (ngSubmit)="submitLogin(loginNgForm)">
+              <div class="admin-card-head">
+                <div>
+                  <p class="section-kicker">Sesion</p>
+                  <h3>Entra a tu portal</h3>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <label>
+                  Correo de acceso
+                  <input [(ngModel)]="loginForm.email" name="loginEmail" placeholder="Ejemplo: hola@casanube.co" required type="email" />
+                </label>
+
+                <label>
+                  Contrasena
+                  <input [(ngModel)]="loginForm.password" name="loginPassword" placeholder="Tu contrasena" required type="password" />
+                </label>
+              </div>
+
+              <button class="submit-button" type="submit">Entrar al portal</button>
+            </form>
+          }
+        </section>
+      </section>
+    } @else {
+      <section class="portal-hero-grid portal-hero-grid-auth">
+        <article class="portal-intro-card compact-intro">
+          <p class="section-kicker">Sesion activa</p>
+          <h1>{{ currentBusiness()?.businessName }}</h1>
+          <p class="hero-description">{{ currentBusiness()?.description }}</p>
+          <div class="dashboard-metrics">
+            <article class="admin-metric">
+              <span>Productos</span>
+              <strong>{{ currentBusinessProductCount() }}</strong>
+            </article>
+            <article class="admin-metric">
+              <span>Destacados</span>
+              <strong>{{ currentBusinessFeaturedCount() }}</strong>
+            </article>
+            <article class="admin-metric">
+              <span>Publicados</span>
+              <strong>{{ currentBusinessPublishedCount() }}</strong>
+            </article>
+          </div>
+        </article>
+
+        <article class="portal-preview-card">
+          <img class="business-preview-banner" [src]="currentBusiness()?.bannerUrl" [alt]="currentBusiness()?.businessName" />
+          <div class="business-preview-body">
+            <div class="owner-badge">{{ initials(currentBusiness()?.businessName) }}</div>
+            <div class="showcase-copy">
+              <p class="section-kicker">Vista publica</p>
+              <h2>{{ currentBusiness()?.businessName }}</h2>
+              <span>{{ currentBusiness()?.tagline }}</span>
+              <p>{{ currentBusiness()?.city }} | {{ currentBusiness()?.address }}</p>
+              <small>{{ currentBusiness()?.phone }} | {{ currentBusiness()?.email }}</small>
+            </div>
+          </div>
+          <div class="inline-actions">
+            @if (currentBusiness(); as business) {
+              <a class="ghost-button" [routerLink]="['/empresa', business.slug]">Ver perfil publico</a>
+            }
+            @if (cartCount() > 0) {
+              <a class="mini-action" routerLink="/carrito">Ir al carrito</a>
+            }
+          </div>
+        </article>
+      </section>
+    }
+  </header>
+
+  <main class="content-shell">
+    @if (businessFeedback(); as status) {
+      <p class="feedback" [class.error]="status.type === 'error'">{{ status.message }}</p>
+    }
+
+    @if (isLoading()) {
+      <article class="empty-card">
+        <p class="section-kicker">Cargando</p>
+        <h3>Estamos preparando tu portal empresarial.</h3>
+      </article>
+    }
+
+    @if (isAuthenticated()) {
+      <section class="portal-workspace">
+        <form #profileNgForm="ngForm" class="admin-card portal-panel-card" (ngSubmit)="saveBusinessProfile(profileNgForm)">
+          <div class="admin-card-head">
+            <div>
+              <p class="section-kicker">Perfil</p>
+              <h3>Informacion publica</h3>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              Responsable
+              <input [(ngModel)]="businessProfileForm.ownerName" name="businessOwnerName" required type="text" />
+            </label>
+
+            <label>
+              Nombre del negocio
+              <input [(ngModel)]="businessProfileForm.businessName" name="businessBusinessName" required type="text" />
+            </label>
+
+            <label>
+              Correo empresarial
+              <input [(ngModel)]="businessProfileForm.email" name="businessEmail" required type="email" />
+            </label>
+
+            <label>
+              Telefono
+              <input [(ngModel)]="businessProfileForm.phone" name="businessPhone" required type="text" />
+            </label>
+
+            <label>
+              Ciudad
+              <input [(ngModel)]="businessProfileForm.city" name="businessCity" required type="text" />
+            </label>
+
+            <label>
+              Direccion
+              <input [(ngModel)]="businessProfileForm.address" name="businessAddress" required type="text" />
+            </label>
+
+            <label>
+              Frase de marca
+              <input [(ngModel)]="businessProfileForm.tagline" name="businessTagline" required type="text" />
+            </label>
+
+            <label>
+              Tiempo de envio
+              <input [(ngModel)]="businessProfileForm.shippingLeadTime" name="businessLeadTime" required type="text" />
+            </label>
+
+            <label>
+              Pedido minimo
+              <input [(ngModel)]="businessProfileForm.minimumOrderAmount" name="businessMinimumOrderAmount" min="0" required type="number" />
+            </label>
+
+            <label>
+              Logo de la empresa
+              <input [(ngModel)]="businessProfileForm.logoUrl" name="businessLogoUrl" required type="text" />
+            </label>
+
+            <label>
+              Fondo de portada
+              <input [(ngModel)]="businessProfileForm.bannerUrl" name="businessBannerUrl" required type="text" />
+            </label>
+
+            <label>
+              Sitio web
+              <input [(ngModel)]="businessProfileForm.websiteUrl" name="businessWebsiteUrl" type="text" />
+            </label>
+
+            <label class="form-note">
+              Descripcion
+              <textarea [(ngModel)]="businessProfileForm.description" name="businessDescription" required rows="5"></textarea>
+            </label>
+          </div>
+
+          <button class="submit-button" type="submit">Guardar perfil</button>
+        </form>
+
+        <div class="portal-stack">
+          <form #productNgForm="ngForm" class="admin-card portal-panel-card" (ngSubmit)="saveProduct(productNgForm)">
+            <div class="admin-card-head">
+              <div>
+                <p class="section-kicker">Catalogo</p>
+                <h3>{{ editingProductId() ? 'Editar producto' : 'Agregar producto' }}</h3>
+              </div>
+              @if (editingProductId()) {
+                <button class="ghost-button" type="button" (click)="resetProductForm(productNgForm)">Cancelar</button>
+              }
+            </div>
+
+            <div class="form-grid">
+              <label>
+                Nombre
+                <input [(ngModel)]="productForm.name" name="productName" required type="text" />
+              </label>
+
+              <label>
+                Categoria
+                <input [(ngModel)]="productForm.category" name="productCategory" required type="text" />
+              </label>
+
+              <label>
+                Precio
+                <input [(ngModel)]="productForm.price" name="productPrice" min="0" required type="number" />
+              </label>
+
+              <label>
+                Pedido minimo
+                <input [(ngModel)]="productForm.minimumOrder" name="productMinimumOrder" min="1" required type="number" />
+              </label>
+
+              <label>
+                Stock
+                <input [(ngModel)]="productForm.stock" name="productStock" min="0" required type="number" />
+              </label>
+
+              <label>
+                Imagen URL
+                <input [(ngModel)]="productForm.imageUrl" name="productImageUrl" required type="text" />
+              </label>
+
+              <label class="check-row">
+                <input [(ngModel)]="productForm.isFeatured" name="productFeatured" type="checkbox" />
+                Destacar producto
+              </label>
+
+              <label class="check-row">
+                <input [(ngModel)]="productForm.isPublished" name="productPublished" type="checkbox" />
+                Visible en la vitrina publica
+              </label>
+
+              <label class="form-note">
+                Descripcion
+                <textarea [(ngModel)]="productForm.description" name="productDescription" required rows="4"></textarea>
+              </label>
+            </div>
+
+            <button class="submit-button" type="submit">
+              {{ editingProductId() ? 'Actualizar producto' : 'Publicar producto' }}
+            </button>
+          </form>
+
+          <article class="admin-card portal-panel-card">
+            <div class="admin-card-head">
+              <div>
+                <p class="section-kicker">Productos actuales</p>
+                <h3>Todo tu catalogo visible</h3>
+              </div>
+            </div>
+
+            @if (!(currentBusiness()?.products?.length)) {
+              <p class="empty-state">Todavia no has agregado productos en tu empresa.</p>
+            } @else {
+              <div class="admin-list">
+                @for (product of currentBusiness()?.products ?? []; track product.productId) {
+                  <article class="admin-list-item product-row">
+                    <div class="product-row-media">
+                      <img [src]="product.imageUrl" [alt]="product.name" />
+                    </div>
+                    <div class="product-row-copy">
+                      <strong>{{ product.name }}</strong>
+                      <p>{{ product.description }}</p>
+                      <small>
+                        {{ product.category }} | Stock {{ product.stock }} | Min {{ product.minimumOrder }} |
+                        {{ product.isPublished ? 'Publicado' : 'Oculto' }}
+                      </small>
+                    </div>
+                    <div class="product-row-price">
+                      <strong>{{ product.price | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+                    </div>
+                    <div class="inline-actions">
+                      <button class="ghost-button" type="button" (click)="editProduct(product)">Editar</button>
+                      <button class="danger-button" type="button" (click)="deleteProduct(product.productId)">Eliminar</button>
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </article>
+
+          <article class="admin-card portal-panel-card">
+            <div class="admin-card-head">
+              <div>
+                <p class="section-kicker">Pedidos</p>
+                <h3>Solicitudes de compra para tu empresa</h3>
+              </div>
+              @if (newOrdersCount() > 0) {
+                <span class="category-pill active">{{ newOrdersCount() }} nuevos</span>
+              }
+            </div>
+
+            @if (!(ordersFeed()?.orders?.length)) {
+              <p class="empty-state">Todavia no tienes pedidos registrados.</p>
+            } @else {
+              <div class="admin-list">
+                @for (order of ordersFeed()?.orders ?? []; track order.orderId) {
+                  <article class="admin-list-item order-feed-card" [class.order-feed-card-new]="order.isNew">
+                    <div class="order-feed-head">
+                      <div>
+                        <strong>Pedido #{{ order.orderId }}</strong>
+                        <small>{{ order.customerFullName }} | {{ order.customerCity }}</small>
+                      </div>
+                      <div class="order-feed-total">
+                        <strong>{{ order.total | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+                        <small>{{ order.createdAt | date: 'medium' }}</small>
+                      </div>
+                    </div>
+                    <p>{{ order.deliveryAddress }}</p>
+                    <small>{{ order.customerPhone }} | {{ order.customerEmail }}</small>
+                    @if (order.notes) {
+                      <small>Notas: {{ order.notes }}</small>
+                    }
+                    <div class="order-feed-items">
+                      @for (item of order.items; track item.productId) {
+                        <span>{{ item.quantity }} x {{ item.productName }}</span>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </article>
+        </div>
+      </section>
+    }
+  </main>
+</div>

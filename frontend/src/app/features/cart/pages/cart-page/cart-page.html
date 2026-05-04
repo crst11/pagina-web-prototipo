@@ -1,0 +1,215 @@
+<div class="page-shell cart-page-shell">
+  <header class="hero-shell cart-hero" [style.background]="cartHeroBackground()">
+    <nav class="topbar">
+      <a class="brand" routerLink="/">
+        <img class="brand-logo" src="/assets/images/localshop-logo-small.png" alt="LocalShop" />
+        <div class="brand-copy">
+          <strong>LocalShop</strong>
+          <span>Carrito multiempresa para revisar productos, minimos y cerrar tu compra una sola vez</span>
+        </div>
+      </a>
+
+      <div class="topbar-links">
+        <a routerLink="/">Inicio</a>
+        <a routerLink="/portal">Portal</a>
+      </div>
+    </nav>
+
+    <section class="cart-hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Carrito multiempresa</p>
+        <h1>Revisa todo lo que agregaste y compra con un solo formulario.</h1>
+        <p class="hero-description">
+          Tu carrito ya no se separa por una sola empresa. Ahora puedes reunir productos de varios negocios, validar
+          sus minimos y enviar todos los pedidos de una vez.
+        </p>
+
+        <div class="hero-actions">
+          <span class="feedback minimum-order-banner">
+            {{ businessCount() }} empresas | {{ cartCount() }} unidades |
+            {{ cartTotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+          </span>
+        </div>
+      </div>
+
+      <article class="cart-company-card">
+        @if (cartGroups().length > 0) {
+          <div class="showcase-copy">
+            <p class="section-kicker">Resumen rapido</p>
+            <h2>{{ businessCount() }} empresas en el carrito</h2>
+            <p>Cada empresa recibe su propio pedido, pero tus datos del comprador se registran una sola vez.</p>
+          </div>
+
+          <div class="cart-company-list">
+            @for (group of cartGroups(); track group.businessId) {
+              <article class="cart-company-chip">
+                <strong>{{ group.businessName }}</strong>
+                <span>{{ group.subtotal | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</span>
+              </article>
+            }
+          </div>
+        } @else {
+          <div class="showcase-copy">
+            <p class="section-kicker">Sin empresas activas</p>
+            <h2>Tu carrito esta vacio</h2>
+            <p>Agrega productos desde las vitrinas y aqui se iran acumulando por empresa.</p>
+          </div>
+        }
+      </article>
+    </section>
+  </header>
+
+  <main class="content-shell">
+    @if (pageFeedback(); as status) {
+      <p class="feedback error">{{ status.message }}</p>
+    }
+
+    @if (cartFeedback(); as status) {
+      <p class="feedback" [class.error]="status.type === 'error'">{{ status.message }}</p>
+    }
+
+    @if (orderFeedback(); as status) {
+      <p class="feedback" [class.error]="status.type === 'error'">{{ status.message }}</p>
+    }
+
+    @if (isLoading()) {
+      <article class="empty-card">
+        <p class="section-kicker">Cargando</p>
+        <h3>Estamos preparando tu carrito.</h3>
+      </article>
+    }
+
+    @if (currentCartItems().length === 0) {
+      <article class="empty-card">
+        <p class="section-kicker">Sin productos</p>
+        <h3>No tienes productos en el carrito en este momento.</h3>
+        <div class="inline-actions">
+          <a class="primary-action" routerLink="/">Explorar productos</a>
+          <a class="ghost-button" routerLink="/portal">Ir al portal</a>
+        </div>
+      </article>
+    } @else {
+      <section class="cart-layout">
+        <section class="cart-main-stack">
+          @for (group of cartGroups(); track group.businessId) {
+            <article class="cart-card business-cart-group" [class.cart-card-pulse]="cartPulse() && group.items.length > 0">
+              <div class="cart-header">
+                <div>
+                  <p class="section-kicker">Empresa</p>
+                  <h3>{{ group.businessName }}</h3>
+                  <span>{{ group.city }} | {{ group.address }}</span>
+                </div>
+                <div class="group-header-actions">
+                  <strong>{{ group.subtotal | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+                  @if (group.businessSlug) {
+                    <button class="ghost-button" type="button" (click)="openBusinessProfile(group.businessSlug)">Ver empresa</button>
+                  }
+                </div>
+              </div>
+
+              <p class="minimum-order-copy">
+                Minimo para esta empresa:
+                {{ group.minimumOrderAmount | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+              </p>
+
+              <div class="cart-items">
+                @for (item of group.items; track item.productId) {
+                  <article class="cart-item cart-item-expanded">
+                    <img [src]="item.imageUrl" [alt]="item.name" />
+                    <div class="cart-item-copy">
+                      <strong>{{ item.name }}</strong>
+                      <span>{{ item.businessName }}</span>
+                      <small>{{ item.price | currency: 'COP' : 'symbol-narrow' : '1.0-0' }} c/u</small>
+                    </div>
+                    <div class="cart-actions">
+                      <button type="button" (click)="decreaseQuantity(item.productId)">-</button>
+                      <span>{{ item.quantity }}</span>
+                      <button type="button" (click)="increaseQuantity(item.productId)">+</button>
+                    </div>
+                    <div class="cart-line-total">
+                      <strong>{{ item.quantity * item.price | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+                    </div>
+                    <button class="remove-button" type="button" (click)="removeFromCart(item.productId)">Quitar</button>
+                  </article>
+                }
+              </div>
+
+              @if (group.subtotal < group.minimumOrderAmount) {
+                <p class="feedback error">
+                  Esta empresa aun no alcanza su minimo de compra.
+                </p>
+              }
+            </article>
+          }
+        </section>
+
+        <aside class="cart-sidebar-stack">
+          <article class="cart-card summary-card">
+            <p class="section-kicker">Resumen</p>
+            <h3>Total del carrito</h3>
+            <strong>{{ cartTotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+            <p class="minimum-order-copy">{{ businessCount() }} empresas y {{ cartCount() }} unidades listas para revisar.</p>
+            @if (invalidBusinessGroups().length > 0) {
+              <p class="feedback error">
+                Aun faltan minimos en {{ invalidBusinessNames() }}.
+              </p>
+            }
+          </article>
+
+          <form #shipmentNgForm="ngForm" class="order-form" (ngSubmit)="submitShipment(shipmentNgForm)">
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="section-kicker">Compra</p>
+                <h2>Datos del comprador</h2>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <label>
+                Nombre completo
+                <input [(ngModel)]="shipmentForm.fullName" name="shipmentFullName" required type="text" />
+              </label>
+
+              <label>
+                Correo
+                <input [(ngModel)]="shipmentForm.email" name="shipmentEmail" required type="email" />
+              </label>
+
+              <label>
+                Telefono
+                <input [(ngModel)]="shipmentForm.phone" name="shipmentPhone" required type="tel" />
+              </label>
+
+              <label>
+                Ciudad
+                <input [(ngModel)]="shipmentForm.city" name="shipmentCity" required type="text" />
+              </label>
+
+              <label class="form-note">
+                Direccion de entrega
+                <textarea [(ngModel)]="shipmentForm.address" name="shipmentAddress" required rows="3"></textarea>
+              </label>
+
+              <label class="form-note">
+                Indicaciones adicionales
+                <textarea [(ngModel)]="shipmentForm.notes" name="shipmentNotes" rows="3"></textarea>
+              </label>
+            </div>
+
+            <button class="submit-button" type="submit">Enviar pedidos</button>
+          </form>
+        </aside>
+      </section>
+    }
+  </main>
+</div>
+
+@if (cartNotice(); as notice) {
+  <div class="cart-toast" [class.visible]="true">
+    <div class="cart-toast-copy">
+      <strong>Carrito actualizado</strong>
+      <span>{{ notice }}</span>
+    </div>
+    <button class="cart-toast-action" type="button" (click)="refreshMarketplace()">Actualizar vista</button>
+  </div>
+}

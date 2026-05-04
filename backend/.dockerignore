@@ -1,0 +1,6 @@
+bin
+obj
+build-check
+*.log
+run.out.log
+run.err.log

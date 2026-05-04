@@ -1,0 +1,9 @@
+.git
+.vs
+**/bin
+**/obj
+**/dist
+**/.angular
+**/node_modules
+**/*.log
+frontend/*preview.png
