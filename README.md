@@ -163,3 +163,36 @@ Se verifico manualmente:
 - Las imagenes de ejemplo viven en `frontend/public/assets/images`.
 - El borrado de productos en el backend es logico (`IsArchived`) para no dañar pedidos ya creados.
 - El frontend consume `/api`; en Docker lo resuelve Nginx y en desarrollo local lo resuelve `frontend/proxy.conf.json`.
+
+## Estructura
+
+```text
+PaginaWeb/
+|-- backend/
+|   |-- Contracts/          # DTOs y contratos HTTP de la API
+|   |-- Controllers/        # Endpoints de auth, vitrina, pedidos y administracion
+|   |-- Repositories/       # Acceso a datos SQL Server y runtime demo
+|   |-- Dockerfile          # Imagen del backend ASP.NET Core
+|   |-- Program.cs          # Configuracion de servicios, CORS, controladores y healthcheck
+|   `-- appsettings*.json   # Configuracion local y de desarrollo
+|-- database/
+|   `-- sqlserver/
+|       |-- init.sql        # Script completo para recrear la base local
+|       |-- docker-init.sql # Script idempotente usado por Docker
+|       `-- migrations/     # Cambios no destructivos de esquema
+|-- docs/
+|   |-- ARQUITECTURA.md     # Explicacion de capas, flujos y archivos clave
+|   |-- MODULOS.md          # Mapa de modulos funcionales
+|   |-- ENTREGA.md          # Este resumen de entrega
+|   `-- screenshots/        # Capturas reales del sistema
+|-- frontend/
+|   |-- public/assets/      # Imagenes y recursos estaticos
+|   |-- src/app/core/       # Modelos y servicios compartidos
+|   |-- src/app/features/   # Modulos: auth, empresas, vitrina y carrito
+|   |-- src/app/layout/     # Shell principal de navegacion
+|   |-- Dockerfile          # Imagen del frontend Angular
+|   |-- nginx.conf          # Servidor SPA y proxy hacia backend
+|   `-- proxy.conf.json     # Proxy para desarrollo local
+|-- docker-compose.yml      # Orquesta SQL Server, inicializador DB, backend y frontend
+|-- .env.example            # Variables de puertos y clave SQL Server
+`-- README.md               # Instrucciones principales del proyecto
