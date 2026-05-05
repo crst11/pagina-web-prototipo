@@ -1,7 +1,7 @@
 /*
     Migracion no destructiva para bases existentes.
 
-    Agrega archivado logico de productos, usado por el backend para ocultar
+    Agrega el archivado logico de productos usado por el backend para ocultar
     productos eliminados sin romper OrderItems ni el historial de pedidos.
 */
 
@@ -30,4 +30,3 @@ GO
 CREATE INDEX IX_Products_PublishedFeatured
 ON dbo.Products (IsArchived, IsPublished, IsFeatured);
 GO
-

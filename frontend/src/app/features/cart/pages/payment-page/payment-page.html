@@ -1,0 +1,104 @@
+<div class="page-shell cart-page-shell">
+  <header class="hero-shell cart-hero">
+    <nav class="topbar">
+      <a class="brand" routerLink="/">
+        <img class="brand-logo" src="/assets/images/localshop-logo-small.png" alt="LocalShop" />
+        <div class="brand-copy">
+          <strong>LocalShop</strong>
+          <span>Portal de Pagos</span>
+        </div>
+      </a>
+
+      <div class="topbar-links">
+        <a routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+        <a routerLink="/carrito" routerLinkActive="active-link">Volver al carrito</a>
+      </div>
+    </nav>
+
+    <section class="cart-hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Portal de pagos seguro</p>
+        <h1>Completa tu compra de forma segura</h1>
+        <p class="hero-description">
+          Selecciona el metodo de pago que prefieras. Para proteger tus datos, esta compra requiere una cuenta de cliente activa.
+        </p>
+      </div>
+    </section>
+  </header>
+
+  <main class="content-shell">
+    @if (pageFeedback(); as status) {
+      <p class="feedback"
+         [class.error]="status.type === 'error'"
+         [class.success]="status.type === 'success'"
+         [class.info]="status.type === 'info'">
+        {{ status.message }}
+      </p>
+    }
+
+    <section class="cart-layout">
+      <section class="cart-main-stack">
+        <article class="cart-card payment-methods-card">
+          <div class="section-heading compact-heading">
+            <div>
+              <p class="section-kicker">Opciones</p>
+              <h2>Metodos de pago</h2>
+            </div>
+          </div>
+          
+          <div class="payment-options-grid">
+            <label class="payment-option" [class.active]="paymentMethod() === 'Tarjeta de Credito'">
+              <input type="radio" name="paymentMethod" value="Tarjeta de Credito" (change)="paymentMethod.set('Tarjeta de Credito')" />
+              <div class="payment-option-content">
+                <strong>Tarjeta de Credito / Debito</strong>
+                <span>Paga con Visa, Mastercard o Amex</span>
+              </div>
+            </label>
+
+            <label class="payment-option" [class.active]="paymentMethod() === 'PSE'">
+              <input type="radio" name="paymentMethod" value="PSE" (change)="paymentMethod.set('PSE')" />
+              <div class="payment-option-content">
+                <strong>PSE (Transferencia Bancaria)</strong>
+                <span>Paga directo desde tu cuenta de banco</span>
+              </div>
+            </label>
+
+            <label class="payment-option" [class.active]="paymentMethod() === 'Nequi / Daviplata'">
+              <input type="radio" name="paymentMethod" value="Nequi / Daviplata" (change)="paymentMethod.set('Nequi / Daviplata')" />
+              <div class="payment-option-content">
+                <strong>Nequi / Daviplata</strong>
+                <span>Transferencia rapida usando tu numero de celular</span>
+              </div>
+            </label>
+            
+            <label class="payment-option" [class.active]="paymentMethod() === 'Efectivo en corresponsal'">
+              <input type="radio" name="paymentMethod" value="Efectivo en corresponsal" (change)="paymentMethod.set('Efectivo en corresponsal')" />
+              <div class="payment-option-content">
+                <strong>Efectivo en corresponsal</strong>
+                <span>Efecty, Baloto, Puntos Red, etc.</span>
+              </div>
+            </label>
+          </div>
+        </article>
+      </section>
+
+      <aside class="cart-sidebar-stack">
+        <article class="cart-card summary-card">
+          <p class="section-kicker">Resumen de la compra</p>
+          <h3>Total a pagar</h3>
+          <strong>{{ cartTotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+          <p class="minimum-order-copy">La compra quedara en tu historial y en la bandeja de la empresa.</p>
+        </article>
+
+        <article class="cart-card summary-card">
+          <button class="submit-button" type="button" (click)="submitPayment()" [disabled]="isLoading() || !paymentMethod()">
+            {{ isLoading() ? 'Procesando pago...' : 'Pagar ahora' }}
+          </button>
+          <a class="ghost-button back-link" routerLink="/carrito" style="margin-top: 1rem; width: 100%;">
+            Volver al carrito (Cancelar)
+          </a>
+        </article>
+      </aside>
+    </section>
+  </main>
+</div>

@@ -1,0 +1,9 @@
+.routed-marketplace-page {
+  width: min(1180px, calc(100% - 32px));
+}
+
+.content-shell {
+  display: grid;
+  gap: 24px;
+  padding-top: 24px;
+}

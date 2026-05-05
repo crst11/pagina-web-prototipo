@@ -1,0 +1,9 @@
+.businesses-panel,
+.business-grid {
+  display: grid;
+  gap: 22px;
+}
+
+.business-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}

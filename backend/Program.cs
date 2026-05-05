@@ -1,32 +1,15 @@
-using TiendaMicroempresas.Api.Repositories;
+using TiendaMicroempresas.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-const string corsPolicy = "frontend";
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["http://localhost:4200"];
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(corsPolicy, policy =>
-    {
-        policy.WithOrigins(allowedOrigins)
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
-
-builder.Services.AddControllers();
-builder.Services.AddSingleton<IStoreRepository, SqlStoreRepository>();
+builder.Services.AddLocalShopCors(builder.Configuration);
+builder.Services.AddLocalShopServices();
 
 var app = builder.Build();
 
-app.UseCors(corsPolicy);
+app.UseCors("frontend");
 
-app.MapGet("/health", () => Results.Ok(new
-{
-    status = "ok",
-    service = "LocalShop API"
-}));
+app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "LocalShop API" }));
 
 app.MapGet("/", () => Results.Ok(new
 {
@@ -38,6 +21,9 @@ app.MapGet("/", () => Results.Ok(new
         "/api/auth/register",
         "/api/auth/login",
         "/api/auth/me",
+        "/api/customers/register",
+        "/api/customers/login",
+        "/api/customers/orders",
         "/api/admin/catalog",
         "/api/admin/orders",
         "/api/admin/products",

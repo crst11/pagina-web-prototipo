@@ -1,0 +1,30 @@
+.page-shell {
+  width: min(1180px, calc(100% - 32px));
+}
+
+.hero-shell {
+  margin-bottom: 0;
+}
+
+.content-shell {
+  display: grid;
+  gap: 24px;
+  padding-top: 24px;
+}
+
+.topbar {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.topbar-links a {
+  color: var(--ink);
+}
+
+@media (max-width: 860px) {
+  .page-shell {
+    width: min(100% - 20px, 1180px);
+  }
+}

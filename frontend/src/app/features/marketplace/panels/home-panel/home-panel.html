@@ -1,0 +1,93 @@
+<section class="panel-section home-panel" id="inicio">
+  <div class="hero-copy">
+    <p class="eyebrow">Inicio</p>
+    <h1>LocalShop conecta microempresas con compradores en una vitrina clara.</h1>
+    <p class="hero-description">
+      Encuentra productos de microempresas locales, compara opciones y compra directamente desde la vitrina que mas se
+      ajuste a lo que necesitas.
+    </p>
+
+    <div class="search-card">
+      <label class="search-label" for="searchProducts">Buscar producto</label>
+      <div class="search-row">
+        <input
+          id="searchProducts"
+          type="search"
+          [ngModel]="searchTerm"
+          (ngModelChange)="searchTermChange.emit($event)"
+          [ngModelOptions]="{ standalone: true }"
+          placeholder="Ejemplo: brunch, etiquetas, kits, fruta fresca..."
+        />
+        <a class="primary-action" routerLink="/vitrina">Buscar</a>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <a class="primary-action" routerLink="/productos">Explorar productos</a>
+      @if (selectedBusiness) {
+        <button class="secondary-action" type="button" (click)="openBusiness.emit(selectedBusiness.businessId)">
+          Ver empresa destacada
+        </button>
+      }
+    </div>
+
+    @if (cartFeedback; as status) {
+      <p class="feedback" [class.error]="status.type === 'error'">{{ status.message }}</p>
+    }
+
+    <div class="hero-metrics">
+      <article class="metric-card">
+        <span>Microempresas</span>
+        <strong>{{ totalBusinesses }}</strong>
+      </article>
+      <article class="metric-card">
+        <span>Productos</span>
+        <strong>{{ totalProducts }}</strong>
+      </article>
+    </div>
+  </div>
+
+  <div class="hero-showcase">
+    @if (selectedBusiness; as business) {
+      <article class="showcase-panel business-preview">
+        <img class="business-preview-banner" [src]="business.bannerUrl" [alt]="business.businessName" />
+        <div class="business-preview-body">
+          <div class="owner-badge">{{ initials(business.businessName) }}</div>
+          <div class="showcase-copy">
+            <p class="section-kicker">Empresa destacada</p>
+            <h2>{{ business.businessName }}</h2>
+            <span>{{ business.tagline }}</span>
+            <p>{{ business.city }} | {{ business.address }}</p>
+            <small>{{ business.ownerName }} | {{ business.phone }}</small>
+          </div>
+        </div>
+      </article>
+    }
+
+    <article class="showcase-panel owner-panel" id="login">
+      <div class="showcase-copy">
+        <p class="section-kicker">{{ isAnyAuthenticated ? 'Cuenta activa' : 'Acceso a cuentas' }}</p>
+        @if (currentCustomer) {
+          <h3>{{ currentCustomer.fullName }}</h3>
+          <p>Revisa tu historial de compras y continua usando tu carrito con tus datos guardados.</p>
+        } @else if (isAuthenticated) {
+          <h3>{{ currentBusiness?.businessName }}</h3>
+          <p>Administra perfil, productos y pedidos desde tu portal empresarial.</p>
+        } @else {
+          <h3>Elige como quieres entrar</h3>
+          <p>Usa una cuenta de cliente para comprar o un portal empresarial para vender.</p>
+        }
+        <div class="inline-actions">
+          @if (currentCustomer) {
+            <a class="mini-action" routerLink="/cliente">Abrir cuenta cliente</a>
+          } @else if (isAuthenticated) {
+            <a class="mini-action" routerLink="/portal">Abrir portal empresarial</a>
+          } @else {
+            <a class="mini-action" routerLink="/cliente">Entrar como cliente</a>
+            <a class="ghost-button" routerLink="/portal">Entrar como empresario</a>
+          }
+        </div>
+      </div>
+    </article>
+  </div>
+</section>

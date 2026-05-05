@@ -31,8 +31,9 @@
 .profile-sidebar {
   border: 1px solid var(--line);
   border-radius: 28px;
-  background: var(--card);
-  box-shadow: 0 24px 60px rgba(18, 48, 71, 0.08);
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: 0 24px 60px rgba(8, 124, 117, 0.08);
 }
 
 .detail-card,
@@ -86,8 +87,8 @@
 
 .minimum-order-banner {
   width: fit-content;
-  background: rgba(191, 233, 255, 0.38);
-  color: var(--ink);
+  background: #e6fffb;
+  color: #087c75;
 }
 
 .minimum-order-copy {

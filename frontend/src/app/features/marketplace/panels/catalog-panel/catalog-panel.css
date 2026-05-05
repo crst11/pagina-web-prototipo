@@ -1,0 +1,9 @@
+.catalog-panel,
+.product-grid {
+  display: grid;
+  gap: 22px;
+}
+
+.product-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}

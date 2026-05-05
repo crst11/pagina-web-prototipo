@@ -1,0 +1,76 @@
+.home-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(340px, 1.05fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.hero-copy h1 {
+  max-width: 15ch;
+  font-size: clamp(2.25rem, 3.8vw, 4rem);
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.hero-description {
+  color: var(--muted);
+}
+
+.hero-metrics {
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.hero-metrics .metric-card {
+  min-height: 104px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  align-content: center;
+  gap: 6px;
+}
+
+.hero-metrics .metric-card span {
+  font-size: 0.88rem;
+  line-height: 1.2;
+}
+
+.hero-metrics .metric-card strong {
+  max-width: 100%;
+  font-size: clamp(1.65rem, 2.8vw, 2.2rem);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.hero-showcase {
+  display: grid;
+  gap: 18px;
+}
+
+.business-preview-banner {
+  height: 210px;
+}
+
+@media (max-width: 1180px) {
+  .home-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-copy h1 {
+    max-width: 18ch;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero-copy h1 {
+    max-width: 100%;
+    font-size: clamp(2rem, 10vw, 3rem);
+  }
+
+  .hero-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-metrics .metric-card {
+    min-height: 96px;
+  }
+}

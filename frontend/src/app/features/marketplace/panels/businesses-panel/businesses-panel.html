@@ -1,0 +1,40 @@
+<section class="panel-section businesses-panel" id="empresas">
+  <div class="section-heading">
+    <div>
+      <p class="section-kicker">Empresas</p>
+      <h2>Microempresas listas para atender tu pedido</h2>
+    </div>
+    <p class="section-copy">Explora perfiles empresariales, compara estilos y entra directo al catalogo.</p>
+  </div>
+
+  <div class="business-grid">
+    @for (business of businesses; track business.businessId) {
+      <article class="business-card" [class.active]="selectedBusiness?.businessId === business.businessId">
+        <img class="business-card-banner" [src]="business.bannerUrl" [alt]="business.businessName" />
+        <div class="business-card-body">
+          <div class="business-card-head">
+            <div class="owner-badge compact">{{ initials(business.businessName) }}</div>
+            <div class="business-card-copy">
+              <strong>{{ business.businessName }}</strong>
+              <span>{{ business.city }}</span>
+              <p>{{ business.tagline }}</p>
+            </div>
+          </div>
+          <div class="business-card-summary">
+            <p>{{ business.description }}</p>
+            <small>{{ business.ownerName }}</small>
+            <small>{{ business.products.length }} productos publicados</small>
+          </div>
+          <div class="inline-actions business-card-actions">
+            <button class="ghost-button" type="button" (click)="previewBusiness.emit(business.businessId)">
+              Vista previa
+            </button>
+            <button class="mini-action" type="button" (click)="openBusiness.emit(business.businessId)">
+              Abrir perfil
+            </button>
+          </div>
+        </div>
+      </article>
+    }
+  </div>
+</section>

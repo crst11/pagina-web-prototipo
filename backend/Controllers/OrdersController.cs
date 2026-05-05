@@ -1,6 +1,9 @@
-using System.Data.Odbc;
 using Microsoft.AspNetCore.Mvc;
-using TiendaMicroempresas.Api.Contracts;
+using TiendaMicroempresas.Api.Contracts.Auth;
+using TiendaMicroempresas.Api.Contracts.Customers;
+using TiendaMicroempresas.Api.Contracts.Orders;
+using TiendaMicroempresas.Api.Contracts.Products;
+using TiendaMicroempresas.Api.Contracts.Store;
 using TiendaMicroempresas.Api.Repositories;
 
 namespace TiendaMicroempresas.Api.Controllers;
@@ -12,10 +15,17 @@ public sealed class OrdersController(IStoreRepository repository) : ControllerBa
     [HttpPost("checkout")]
     [ProducesResponseType<CheckoutCartResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<CheckoutCartResponse>> CheckoutCart(
         [FromBody] CheckoutCartRequest request,
+        [FromHeader(Name = "X-Customer-Token")] string? customerToken,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(customerToken))
+        {
+            return Unauthorized(new { message = "Registrate o inicia sesion como cliente para completar la compra." });
+        }
+
         if (string.IsNullOrWhiteSpace(request.FullName) ||
             string.IsNullOrWhiteSpace(request.Email) ||
             string.IsNullOrWhiteSpace(request.Phone) ||
@@ -37,35 +47,35 @@ public sealed class OrdersController(IStoreRepository repository) : ControllerBa
 
         try
         {
-            var response = await repository.CheckoutCartAsync(request, cancellationToken);
+            var response = await repository.CheckoutCartAsync(request, customerToken, cancellationToken);
             return Created("/api/orders/checkout", response);
         }
         catch (InvalidOperationException exception)
         {
+            if (exception.Message.Contains("sesion del cliente", StringComparison.OrdinalIgnoreCase))
+            {
+                return Unauthorized(new { message = exception.Message });
+            }
+
             return BadRequest(new { message = exception.Message });
-        }
-        catch (OdbcException)
-        {
-            try
-            {
-                var response = DemoStoreRuntime.CheckoutCart(request);
-                return Created("/api/orders/checkout", response);
-            }
-            catch (InvalidOperationException exception)
-            {
-                return BadRequest(new { message = exception.Message });
-            }
         }
     }
 
     [HttpPost]
     [ProducesResponseType<OrderCreatedResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<OrderCreatedResponse>> CreateOrder(
         [FromBody] CreateOrderRequest request,
+        [FromHeader(Name = "X-Customer-Token")] string? customerToken,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(customerToken))
+        {
+            return Unauthorized(new { message = "Registrate o inicia sesion como cliente para completar la compra." });
+        }
+
         if (string.IsNullOrWhiteSpace(request.FullName) ||
             string.IsNullOrWhiteSpace(request.Email) ||
             string.IsNullOrWhiteSpace(request.Phone) ||
@@ -92,24 +102,17 @@ public sealed class OrdersController(IStoreRepository repository) : ControllerBa
 
         try
         {
-            var createdOrder = await repository.CreateOrderAsync(request, cancellationToken);
+            var createdOrder = await repository.CreateOrderAsync(request, customerToken, cancellationToken);
             return Created($"/api/orders/{createdOrder.OrderId}", createdOrder);
         }
         catch (InvalidOperationException exception)
         {
+            if (exception.Message.Contains("sesion del cliente", StringComparison.OrdinalIgnoreCase))
+            {
+                return Unauthorized(new { message = exception.Message });
+            }
+
             return BadRequest(new { message = exception.Message });
-        }
-        catch (OdbcException)
-        {
-            try
-            {
-                var createdOrder = DemoStoreRuntime.CreateOrder(request);
-                return Created($"/api/orders/{createdOrder.OrderId}", createdOrder);
-            }
-            catch (InvalidOperationException exception)
-            {
-                return BadRequest(new { message = exception.Message });
-            }
         }
     }
 }

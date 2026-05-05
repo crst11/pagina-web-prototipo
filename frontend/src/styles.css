@@ -4,9 +4,9 @@
   color-scheme: light;
   font-family: 'Manrope', sans-serif;
   background:
-    radial-gradient(circle at top, rgba(251, 191, 36, 0.16), transparent 22%),
-    linear-gradient(180deg, #fffdfa 0%, #f7efe5 100%);
-  color: #2c1609;
+    radial-gradient(circle at top, rgba(15, 159, 152, 0.1), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #f7fffd 100%);
+  color: #17312f;
 }
 
 html {

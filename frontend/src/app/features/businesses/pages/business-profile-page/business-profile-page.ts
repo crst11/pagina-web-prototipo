@@ -3,9 +3,10 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import { MarketplaceBusiness, MarketplaceSnapshot } from '../../../../core/models/store.models';
+import { MarketplaceBusiness, MarketplaceSnapshot } from '../../../../core/models/marketplace.models';
 import { CartService } from '../../../../core/services/cart.service';
-import { StoreService } from '../../../../core/services/store.service';
+import { MarketplaceService } from '../../../../core/services/marketplace.service';
+import { SessionService } from '../../../../core/services/session.service';
 
 @Component({
   selector: 'app-business-profile-page',
@@ -17,7 +18,8 @@ export class BusinessProfilePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly storeService = inject(StoreService);
+  private readonly marketplaceService = inject(MarketplaceService);
+  private readonly sessionService = inject(SessionService);
   private readonly cartService = inject(CartService);
 
   protected readonly marketplace = signal<MarketplaceSnapshot | null>(null);
@@ -26,13 +28,16 @@ export class BusinessProfilePage implements OnInit {
   protected readonly pageFeedback = signal<{ type: 'error'; message: string } | null>(null);
   protected readonly cartFeedback = signal<{ type: 'success' | 'error'; message: string } | null>(null);
   protected readonly orderFeedback = signal<{ type: 'success' | 'error'; message: string } | null>(null);
+  protected readonly expandedProductId = signal<number | null>(null);
+
+  // Indica si el visitante es un empresario con sesion activa.
+  // En ese caso NO se muestra nada relacionado con el carrito de compras.
+  protected readonly isBusinessSession = computed(() => !!this.sessionService.readOwnerToken());
+
   protected readonly profileHeroBackground = computed(() => {
     const bannerUrl = this.business()?.bannerUrl;
-    if (!bannerUrl) {
-      return null;
-    }
-
-    return `linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(237, 248, 255, 0.82)), linear-gradient(110deg, rgba(18, 48, 71, 0.16), rgba(15, 118, 110, 0.14)), url("${bannerUrl}") center / cover no-repeat`;
+    if (!bannerUrl) return null;
+    return `linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(230, 255, 251, 0.88)), url("${bannerUrl}") center / cover no-repeat`;
   });
   protected readonly currentBusinessProducts = computed(
     () => this.business()?.products.filter((product) => product.isPublished) ?? [],
@@ -44,10 +49,7 @@ export class BusinessProfilePage implements OnInit {
   );
   protected readonly currentCartItems = computed(() => {
     const business = this.business();
-    if (!business) {
-      return [];
-    }
-
+    if (!business) return [];
     return this.cartService.items().filter((item) => item.businessId === business.businessId);
   });
   protected readonly cartCount = this.cartService.count;
@@ -59,10 +61,7 @@ export class BusinessProfilePage implements OnInit {
   );
   protected readonly meetsMinimumOrder = computed(() => {
     const business = this.business();
-    if (!business) {
-      return false;
-    }
-
+    if (!business) return false;
     return this.currentCartItems().length > 0 && this.cartTotal() >= business.minimumOrderAmount;
   });
   protected readonly externalCartItemsCount = computed(
@@ -80,30 +79,35 @@ export class BusinessProfilePage implements OnInit {
   }
 
   protected initials(value?: string | null): string {
-    if (!value?.trim()) {
-      return 'LS';
-    }
-
-    return value
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join('');
+    if (!value?.trim()) return 'LS';
+    return value.trim().split(/\s+/).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('');
   }
 
   protected openCurrentCartBusiness(): void {
     void this.router.navigate(['/carrito']);
   }
 
+  protected isProductDescriptionExpanded(productId: number): boolean {
+    return this.expandedProductId() === productId;
+  }
+
+  protected hasLongDescription(description: string): boolean {
+    return description.length > 120;
+  }
+
+  protected productSummary(description: string, productId: number): string {
+    if (this.isProductDescriptionExpanded(productId) || description.length <= 86) return description;
+    return `${description.slice(0, 86).trimEnd()}...`;
+  }
+
+  protected toggleProductDescription(productId: number): void {
+    this.expandedProductId.update((currentId) => (currentId === productId ? null : productId));
+  }
+
   protected addToCart(productId: number): void {
     const business = this.business();
     const product = business?.products.find((item) => item.productId === productId);
-
-    if (!business || !product) {
-      return;
-    }
-
+    if (!business || !product) return;
     this.orderFeedback.set(null);
     this.cartFeedback.set(null);
     this.cartService.addProduct(product, business.businessName);
@@ -126,41 +130,28 @@ export class BusinessProfilePage implements OnInit {
 
   protected openCheckout(): void {
     if (this.cartCount() === 0) {
-      this.cartFeedback.set({
-        type: 'error',
-        message: 'Agrega al menos un producto al carrito antes de abrir la pagina del pedido.',
-      });
+      this.cartFeedback.set({ type: 'error', message: 'Agrega al menos un producto al carrito antes de abrir la pagina del pedido.' });
       return;
     }
-
     this.cartFeedback.set(null);
     void this.router.navigate(['/carrito']);
   }
 
   private async loadBusiness(slug: string): Promise<void> {
     this.isLoading.set(true);
-
     try {
-      const snapshot = await this.storeService.getMarketplaceSnapshot();
+      const snapshot = await this.marketplaceService.getMarketplaceSnapshot();
       const business = snapshot.businesses.find((item) => item.slug === slug) ?? null;
-
       this.marketplace.set(snapshot);
       this.business.set(business);
       this.cartFeedback.set(null);
-
       if (!business) {
-        this.pageFeedback.set({
-          type: 'error',
-          message: 'La empresa que buscas no existe o ya no esta publicada en la vitrina.',
-        });
+        this.pageFeedback.set({ type: 'error', message: 'La empresa que buscas no existe o ya no esta publicada en la vitrina.' });
       } else {
         this.pageFeedback.set(null);
       }
     } catch (error) {
-      this.pageFeedback.set({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'No se pudo cargar el perfil empresarial.',
-      });
+      this.pageFeedback.set({ type: 'error', message: error instanceof Error ? error.message : 'No se pudo cargar el perfil empresarial.' });
     } finally {
       this.isLoading.set(false);
     }

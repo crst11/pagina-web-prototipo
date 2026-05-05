@@ -5,23 +5,30 @@
         <img class="brand-logo" src="/assets/images/localshop-logo-small.png" alt="LocalShop" />
         <div class="brand-copy">
           <strong>LocalShop</strong>
-          <span>Carrito multiempresa para revisar productos, minimos y cerrar tu compra una sola vez</span>
+          <span>Carrito de compras para revisar productos, empresas y datos de entrega</span>
         </div>
       </a>
 
       <div class="topbar-links">
-        <a routerLink="/">Inicio</a>
-        <a routerLink="/portal">Portal</a>
+        <a routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+        @if (currentCustomer()) {
+          <a routerLink="/cliente" routerLinkActive="active-link">Cuenta cliente</a>
+        } @else if (currentBusiness()) {
+          <a routerLink="/portal" routerLinkActive="active-link">Portal empresarial</a>
+        } @else {
+          <a routerLink="/cliente" routerLinkActive="active-link">Cuenta cliente</a>
+          <a routerLink="/portal" routerLinkActive="active-link">Portal empresarial</a>
+        }
       </div>
     </nav>
 
     <section class="cart-hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow">Carrito multiempresa</p>
+        <p class="eyebrow">Carrito de compras</p>
         <h1>Revisa todo lo que agregaste y compra con un solo formulario.</h1>
         <p class="hero-description">
-          Tu carrito ya no se separa por una sola empresa. Ahora puedes reunir productos de varios negocios, validar
-          sus minimos y enviar todos los pedidos de una vez.
+          Consulta los productos seleccionados, confirma los valores minimos de cada empresa y completa tus datos para
+          enviar el pedido.
         </p>
 
         <div class="hero-actions">
@@ -37,7 +44,7 @@
           <div class="showcase-copy">
             <p class="section-kicker">Resumen rapido</p>
             <h2>{{ businessCount() }} empresas en el carrito</h2>
-            <p>Cada empresa recibe su propio pedido, pero tus datos del comprador se registran una sola vez.</p>
+            <p>Revisa el subtotal por empresa antes de completar la informacion de entrega.</p>
           </div>
 
           <div class="cart-company-list">
@@ -85,7 +92,11 @@
         <h3>No tienes productos en el carrito en este momento.</h3>
         <div class="inline-actions">
           <a class="primary-action" routerLink="/">Explorar productos</a>
-          <a class="ghost-button" routerLink="/portal">Ir al portal</a>
+          @if (currentBusiness()) {
+            <a class="ghost-button" routerLink="/portal">Portal empresarial</a>
+          } @else if (!currentCustomer()) {
+            <a class="ghost-button" routerLink="/cliente">Cuenta cliente</a>
+          }
         </div>
       </article>
     } @else {
@@ -144,6 +155,25 @@
         </section>
 
         <aside class="cart-sidebar-stack">
+          <article class="cart-card summary-card customer-session-card">
+            @if (currentCustomer(); as customer) {
+              <p class="section-kicker">Cliente conectado</p>
+              <h3>{{ customer.fullName }}</h3>
+              <p class="minimum-order-copy">Estos pedidos se guardaran en tu historial.</p>
+            } @else if (currentBusiness(); as business) {
+              <p class="section-kicker">Sesion empresarial</p>
+              <h3>{{ business.businessName }}</h3>
+              <p class="minimum-order-copy">Cierra esta sesion si quieres comprar con una cuenta de cliente.</p>
+            } @else {
+              <p class="section-kicker">Cuenta de cliente</p>
+              <h3>Inicia sesion para comprar</h3>
+              <p class="minimum-order-copy">
+                Puedes seguir agregando productos al carrito, pero para pagar debes tener una cuenta de cliente.
+              </p>
+              <a class="ghost-button" routerLink="/cliente">Registrarse o iniciar sesion</a>
+            }
+          </article>
+
           <article class="cart-card summary-card">
             <p class="section-kicker">Resumen</p>
             <h3>Total del carrito</h3>
@@ -164,29 +194,30 @@
               </div>
             </div>
 
+            <p class="required-hint"><span class="required-mark">*</span> Los campos marcados con asterisco son obligatorios</p>
             <div class="form-grid">
               <label>
-                Nombre completo
+                Nombre completo <span class="required-mark">*</span>
                 <input [(ngModel)]="shipmentForm.fullName" name="shipmentFullName" required type="text" />
               </label>
 
               <label>
-                Correo
+                Correo <span class="required-mark">*</span>
                 <input [(ngModel)]="shipmentForm.email" name="shipmentEmail" required type="email" />
               </label>
 
               <label>
-                Telefono
+                Telefono <span class="required-mark">*</span>
                 <input [(ngModel)]="shipmentForm.phone" name="shipmentPhone" required type="tel" />
               </label>
 
               <label>
-                Ciudad
+                Ciudad <span class="required-mark">*</span>
                 <input [(ngModel)]="shipmentForm.city" name="shipmentCity" required type="text" />
               </label>
 
               <label class="form-note">
-                Direccion de entrega
+                Direccion de entrega <span class="required-mark">*</span>
                 <textarea [(ngModel)]="shipmentForm.address" name="shipmentAddress" required rows="3"></textarea>
               </label>
 
@@ -196,7 +227,11 @@
               </label>
             </div>
 
-            <button class="submit-button" type="submit">Enviar pedidos</button>
+            @if (currentCustomer()) {
+              <button class="submit-button" type="submit">Continuar al pago</button>
+            } @else {
+              <a class="submit-button" routerLink="/cliente">Registrarse o iniciar sesion para comprar</a>
+            }
           </form>
         </aside>
       </section>

@@ -12,17 +12,19 @@
       <div class="topbar-links">
         <a routerLink="/">Inicio</a>
         <a href="#catalogo-empresa">Productos</a>
-        <a href="#carrito-empresa">Carrito</a>
+        @if (!isBusinessSession()) {
+          <a href="#carrito-empresa">Carrito</a>
+        }
       </div>
 
       <div class="topbar-actions">
-        @if (cartCount() > 0) {
+        @if (!isBusinessSession() && cartCount() > 0) {
           <button class="ghost-button cart-trigger" [class.cart-trigger-pulse]="cartPulse()" type="button" (click)="openCurrentCartBusiness()">
             <span>Carrito</span>
             <strong class="cart-count-badge">{{ cartCount() }}</strong>
           </button>
         }
-        @if (hasExternalCart()) {
+        @if (!isBusinessSession() && hasExternalCart()) {
           <button class="ghost-button" type="button" (click)="openCurrentCartBusiness()">
             Ver carrito completo
           </button>
@@ -39,7 +41,9 @@
           <p class="hero-description">{{ business.description }}</p>
 
           <div class="profile-actions">
-            <button class="primary-action" type="button" (click)="openCheckout()">Ir al carrito</button>
+            @if (!isBusinessSession()) {
+              <button class="primary-action" type="button" (click)="openCheckout()">Ir al carrito</button>
+            }
             <a class="secondary-action" href="#catalogo-empresa">Ver catalogo completo</a>
           </div>
 
@@ -111,13 +115,13 @@
         <p class="feedback" [class.error]="status.type === 'error'">{{ status.message }}</p>
       }
 
-      @if (hasExternalCart()) {
-          <article class="profile-note">
-            <div>
-              <p class="section-kicker">Carrito multiempresa</p>
-              <h3>Tambien tienes {{ externalCartItemsCount() }} productos de otras empresas</h3>
-              <p>Desde esta pagina puedes seguir agregando productos y luego revisar todo junto en el carrito general.</p>
-            </div>
+      @if (!isBusinessSession() && hasExternalCart()) {
+        <article class="profile-note">
+          <div>
+            <p class="section-kicker">Carrito multiempresa</p>
+            <h3>Tambien tienes {{ externalCartItemsCount() }} productos de otras empresas</h3>
+            <p>Desde esta pagina puedes seguir agregando productos y luego revisar todo junto en el carrito general.</p>
+          </div>
           <button class="ghost-button" type="button" (click)="openCurrentCartBusiness()">Ver carrito completo</button>
         </article>
       }
@@ -167,7 +171,7 @@
             } @else {
               <div class="product-grid business-products-grid">
                 @for (product of currentBusinessProducts(); track product.productId) {
-                  <article class="product-card">
+                  <article class="product-card" [class.product-card-expanded]="isProductDescriptionExpanded(product.productId)">
                     <div class="product-visual">
                       <img [src]="product.imageUrl" [alt]="product.name" />
                       @if (product.isFeatured) {
@@ -181,15 +185,24 @@
                         <span>{{ product.stock }} disponibles</span>
                       </div>
                       <h3>{{ product.name }}</h3>
-                      <p>{{ product.description }}</p>
+                      <p class="product-description" [class.product-description-expanded]="isProductDescriptionExpanded(product.productId)">
+                        {{ productSummary(product.description, product.productId) }}
+                        <button class="description-toggle" type="button" (click)="toggleProductDescription(product.productId)">
+                          {{ isProductDescriptionExpanded(product.productId) ? 'Menos' : 'Mas' }}
+                        </button>
+                      </p>
                     </div>
 
                     <div class="product-footer">
                       <div>
                         <strong>{{ product.price | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
-                        <span>Agrega 1 unidad por clic</span>
+                        @if (!isBusinessSession() && isProductDescriptionExpanded(product.productId)) {
+                          <span>Agrega 1 unidad por clic</span>
+                        }
                       </div>
-                      <button class="mini-action" type="button" (click)="addToCart(product.productId)">Agregar</button>
+                      @if (!isBusinessSession() && isProductDescriptionExpanded(product.productId)) {
+                        <button class="mini-action product-actions-revealed" type="button" (click)="addToCart(product.productId)">Agregar</button>
+                      }
                     </div>
                   </article>
                 }
@@ -198,70 +211,73 @@
           </section>
         </div>
 
-        <aside class="profile-sidebar" id="carrito-empresa">
-          <div class="cart-card" [class.cart-card-pulse]="cartPulse() && currentCartItems().length > 0">
-            <div class="cart-header">
-              <div>
-                <p class="section-kicker">Carrito</p>
-                <h3>{{ currentBusinessCartCount() }} unidades</h3>
-                <span>
-                  @if (currentBusinessCartCount() > 0) {
-                    Productos agregados de {{ business.businessName }}
-                  } @else {
-                    Agrega productos de esta empresa y combinalos con los de otras si quieres
+        <!-- El carrito lateral solo se muestra cuando el visitante NO es un empresario -->
+        @if (!isBusinessSession()) {
+          <aside class="profile-sidebar" id="carrito-empresa">
+            <div class="cart-card" [class.cart-card-pulse]="cartPulse() && currentCartItems().length > 0">
+              <div class="cart-header">
+                <div>
+                  <p class="section-kicker">Carrito</p>
+                  <h3>{{ currentBusinessCartCount() }} unidades</h3>
+                  <span>
+                    @if (currentBusinessCartCount() > 0) {
+                      Productos agregados de {{ business.businessName }}
+                    } @else {
+                      Agrega productos de esta empresa y combinalos con los de otras si quieres
+                    }
+                  </span>
+                </div>
+                <strong>{{ cartTotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+              </div>
+
+              <p class="minimum-order-copy">
+                Minimo para comprar en esta empresa:
+                {{ business.minimumOrderAmount | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+              </p>
+
+              @if (currentCartItems().length === 0) {
+                <p class="empty-state">Aun no has agregado productos de esta empresa.</p>
+              } @else {
+                <div class="cart-items">
+                  @for (item of currentCartItems(); track item.productId) {
+                    <article class="cart-item">
+                      <img [src]="item.imageUrl" [alt]="item.name" />
+                      <div class="cart-item-copy">
+                        <strong>{{ item.name }}</strong>
+                        <span>{{ item.businessName }}</span>
+                        <small>{{ item.price | currency: 'COP' : 'symbol-narrow' : '1.0-0' }} c/u</small>
+                      </div>
+                      <div class="cart-actions">
+                        <button type="button" (click)="decreaseQuantity(item.productId)">-</button>
+                        <span>{{ item.quantity }}</span>
+                        <button type="button" (click)="increaseQuantity(item.productId)">+</button>
+                      </div>
+                      <button class="remove-button" type="button" (click)="removeFromCart(item.productId)">Quitar</button>
+                    </article>
                   }
-                </span>
-              </div>
-              <strong>{{ cartTotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
-            </div>
+                </div>
 
-            <p class="minimum-order-copy">
-              Minimo para comprar en esta empresa:
-              {{ business.minimumOrderAmount | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
-            </p>
-
-            @if (currentCartItems().length === 0) {
-              <p class="empty-state">Aun no has agregado productos de esta empresa.</p>
-            } @else {
-              <div class="cart-items">
-                @for (item of currentCartItems(); track item.productId) {
-                  <article class="cart-item">
-                    <img [src]="item.imageUrl" [alt]="item.name" />
-                    <div class="cart-item-copy">
-                      <strong>{{ item.name }}</strong>
-                      <span>{{ item.businessName }}</span>
-                      <small>{{ item.price | currency: 'COP' : 'symbol-narrow' : '1.0-0' }} c/u</small>
-                    </div>
-                    <div class="cart-actions">
-                      <button type="button" (click)="decreaseQuantity(item.productId)">-</button>
-                      <span>{{ item.quantity }}</span>
-                      <button type="button" (click)="increaseQuantity(item.productId)">+</button>
-                    </div>
-                    <button class="remove-button" type="button" (click)="removeFromCart(item.productId)">Quitar</button>
-                  </article>
+                @if (!meetsMinimumOrder()) {
+                  <p class="feedback error">
+                    Debes pedir minimo
+                    {{ business.minimumOrderAmount | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+                    para que esta empresa pueda entrar al checkout final.
+                  </p>
                 }
-              </div>
 
-              @if (!meetsMinimumOrder()) {
-                <p class="feedback error">
-                  Debes pedir minimo
-                  {{ business.minimumOrderAmount | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
-                  para que esta empresa pueda entrar al checkout final.
-                </p>
+                <div class="profile-actions">
+                  <button class="submit-button" type="button" (click)="openCheckout()">Ir al carrito general</button>
+                </div>
               }
-
-              <div class="profile-actions">
-                <button class="submit-button" type="button" (click)="openCheckout()">Ir al carrito general</button>
-              </div>
-            }
-          </div>
-        </aside>
+            </div>
+          </aside>
+        }
       </section>
     }
   </main>
 </div>
 
-@if (cartNotice(); as notice) {
+@if (!isBusinessSession() && cartNotice(); as notice) {
   <div class="cart-toast" [class.visible]="true">
     <div class="cart-toast-copy">
       <strong>Producto agregado</strong>

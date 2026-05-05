@@ -1,0 +1,55 @@
+<section class="panel-section benefits-panel" aria-label="Panel de beneficios de productos">
+  <article class="highlight-card">
+    <p class="section-kicker">Compra con confianza</p>
+    <h3>Conoce quien esta detras de cada producto</h3>
+    <p>Revisa datos de contacto, responsable y perfil de la empresa antes de tomar una decision de compra.</p>
+  </article>
+
+  <article class="highlight-card">
+    <p class="section-kicker">Carrito organizado</p>
+    <h3>Agrega productos y finaliza cuando estes listo</h3>
+    <p>Arma tu pedido por empresa, valida el monto minimo y completa tus datos solo al momento de comprar.</p>
+  </article>
+
+  <article class="highlight-card">
+    <p class="section-kicker">Oferta variada</p>
+    <h3>Compara varias empresas desde LocalShop</h3>
+    <p>Explora productos de distintas ciudades y encuentra opciones segun gusto, necesidad y presupuesto.</p>
+  </article>
+</section>
+
+<section class="panel-section products-panel" id="productos">
+  <div class="section-heading">
+    <div>
+      <p class="section-kicker">Productos destacados</p>
+      <h2>Productos para regalos, antojos, detalles y compras de todo tipo</h2>
+    </div>
+    <span class="section-copy">Abre la empresa que te interese y continua desde su perfil.</span>
+  </div>
+
+  <div class="featured-grid">
+    @for (product of featuredProducts; track product.productId) {
+      <article class="featured-card" [class.product-card-expanded]="isProductDescriptionExpanded(product.productId)">
+        <img [src]="product.imageUrl" [alt]="product.name" (click)="openProductProfile.emit(product)" />
+        <div class="featured-copy">
+          <span class="featured-tag">{{ product.businessName }}</span>
+          <h3>{{ product.name }}</h3>
+          <p class="product-description" [class.product-description-expanded]="isProductDescriptionExpanded(product.productId)">
+            {{ productSummary(product.description, product.productId) }}
+            <button class="description-toggle" type="button" (click)="toggleProductDescription(product.productId)">
+              {{ isProductDescriptionExpanded(product.productId) ? 'Menos' : 'Mas' }}
+            </button>
+          </p>
+          <small>{{ product.city }} | {{ product.category }}</small>
+          <strong>{{ product.price | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+          @if (isProductDescriptionExpanded(product.productId)) {
+            <div class="inline-actions product-actions-revealed">
+              <button class="mini-action" type="button" (click)="openProductProfile.emit(product)">Ver empresa</button>
+              <button class="ghost-button" type="button" (click)="addToCart.emit(product)">Agregar</button>
+            </div>
+          }
+        </div>
+      </article>
+    }
+  </div>
+</section>

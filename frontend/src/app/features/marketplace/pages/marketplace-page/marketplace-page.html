@@ -1,5 +1,5 @@
 <div class="page-shell">
-  <header class="hero-shell" id="inicio">
+  <header class="hero-shell">
     <nav class="topbar">
       <a class="brand" href="#inicio">
         <img class="brand-logo" src="/assets/images/localshop-logo-small.png" alt="LocalShop" />
@@ -10,114 +10,38 @@
       </a>
 
       <div class="topbar-links">
-        <a href="#vitrina">Vitrina</a>
-        <a href="#empresas">Empresas</a>
+        <a routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+        <a routerLink="/productos" routerLinkActive="active-link">Productos</a>
+        <a routerLink="/vitrina" routerLinkActive="active-link">Vitrina</a>
+        <a routerLink="/empresas" routerLinkActive="active-link">Empresas</a>
+        @if (!isAuthenticated()) {
+          <a routerLink="/carrito" routerLinkActive="active-link">Carrito</a>
+        }
+        @if (currentCustomer()) {
+          <a routerLink="/cliente" routerLinkActive="active-link">Cuenta cliente</a>
+        } @else if (isAuthenticated()) {
+          <a routerLink="/portal" routerLinkActive="active-link">Portal empresarial</a>
+        } @else {
+          <a routerLink="/cliente" routerLinkActive="active-link">Cuenta cliente</a>
+          <a routerLink="/portal" routerLinkActive="active-link">Portal empresarial</a>
+        }
       </div>
 
       <div class="topbar-actions">
-        @if (cartCount() > 0) {
-          <button
-            class="ghost-button cart-trigger"
-            [class.cart-trigger-pulse]="cartPulse()"
-            type="button"
-            (click)="openCurrentCartBusiness()"
-          >
-            <span>Carrito</span>
-            <strong class="cart-count-badge">{{ cartCount() }}</strong>
-          </button>
-        }
-
-        <button class="ghost-button" type="button" (click)="openPortalPage()">
-          {{ isAuthenticated() ? 'Mi portal' : 'Registrar empresa' }}
+        @if (!isAuthenticated() && cartCount() > 0) {
+        <button
+          class="ghost-button cart-trigger"
+          [class.cart-trigger-pulse]="cartPulse()"
+          type="button"
+          (click)="openCurrentCartBusiness()"
+        >
+          <span>Carrito</span>
+          <strong class="cart-count-badge">{{ cartCount() }}</strong>
         </button>
+      }
+
       </div>
     </nav>
-
-    <section class="hero-grid">
-      <div class="hero-copy">
-        <p class="eyebrow">Compra local con criterio</p>
-        <h1>LocalShop reune productos de microempresas y te conecta directo con negocios verificados.</h1>
-        <p class="hero-description">
-          Descubre articulos, detalles, alimentos, regalos y soluciones para oficina en una sola vitrina. Revisa cada
-          empresa, compara perfiles y compra facilmente para tu hogar, tu equipo o tu negocio.
-        </p>
-
-        <div class="search-card">
-          <label class="search-label" for="searchProducts">Buscar producto</label>
-          <div class="search-row">
-            <input
-              id="searchProducts"
-              type="search"
-              [ngModel]="searchTerm()"
-              (ngModelChange)="setSearchTerm($event)"
-              [ngModelOptions]="{ standalone: true }"
-              placeholder="Ejemplo: brunch, etiquetas, kits, fruta fresca..."
-            />
-            <a class="primary-action" href="#vitrina">Buscar</a>
-          </div>
-        </div>
-
-        <div class="hero-actions">
-          <a class="primary-action" href="#vitrina">Explorar productos</a>
-          @if (selectedBusiness(); as business) {
-            <button class="secondary-action" type="button" (click)="openBusinessProfileById(business.businessId)">
-              Ver empresa destacada
-            </button>
-          }
-        </div>
-
-        @if (cartFeedback(); as status) {
-          <p class="feedback" [class.error]="status.type === 'error'">{{ status.message }}</p>
-        }
-
-        <div class="hero-metrics">
-          <article class="metric-card">
-            <span>Microempresas activas</span>
-            <strong>{{ totalBusinesses() }}</strong>
-          </article>
-          <article class="metric-card">
-            <span>Productos publicados</span>
-            <strong>{{ totalProducts() }}</strong>
-          </article>
-          <article class="metric-card">
-            <span>Pedidos claros</span>
-            <strong>Compra segura</strong>
-          </article>
-        </div>
-      </div>
-
-      <div class="hero-showcase">
-        @if (selectedBusiness(); as business) {
-          <article class="showcase-panel business-preview">
-            <img class="business-preview-banner" [src]="business.bannerUrl" [alt]="business.businessName" />
-            <div class="business-preview-body">
-              <div class="owner-badge">{{ initials(business.businessName) }}</div>
-              <div class="showcase-copy">
-                <p class="section-kicker">Empresa destacada</p>
-                <h2>{{ business.businessName }}</h2>
-                <span>{{ business.tagline }}</span>
-                <p>{{ business.city }} | {{ business.address }}</p>
-                <small>{{ business.ownerName }} | {{ business.phone }}</small>
-              </div>
-            </div>
-          </article>
-        }
-
-        <article class="showcase-panel owner-panel" id="portal">
-          <div class="showcase-copy">
-            <p class="section-kicker">Portal empresarial</p>
-            @if (isAuthenticated()) {
-              <h3>{{ currentBusiness()?.businessName }}</h3>
-              <p>Manten tu perfil actualizado, organiza tu catalogo y recibe pedidos de personas y empresas.</p>
-            } @else {
-              <h3>Lleva tu negocio a nuevos compradores</h3>
-              <p>Crea tu cuenta y muestra tus productos con perfil, contacto y catalogo propio para todo tipo de compradores.</p>
-            }
-            <a class="mini-action" routerLink="/portal">Abrir portal</a>
-          </div>
-        </article>
-      </div>
-    </section>
   </header>
 
   <main class="content-shell">
@@ -125,191 +49,48 @@
       <p class="feedback error">{{ status.message }}</p>
     }
 
-    <section class="highlights-row">
-      <article class="highlight-card">
-        <p class="section-kicker">Compra con confianza</p>
-        <h3>Conoce quien esta detras de cada producto</h3>
-        <p>Revisa datos de contacto, responsable y perfil de la empresa antes de tomar una decision de compra.</p>
-      </article>
+    <app-home-panel
+      [selectedBusiness]="selectedBusiness()"
+      [currentBusiness]="currentBusiness()"
+      [searchTerm]="searchTerm()"
+      [totalBusinesses]="totalBusinesses()"
+      [totalProducts]="totalProducts()"
+      [isAuthenticated]="isAuthenticated()"
+      [isAnyAuthenticated]="isAnyAuthenticated()"
+      [currentCustomer]="currentCustomer()"
+      [cartFeedback]="cartFeedback()"
+      (searchTermChange)="setSearchTerm($event)"
+      (openBusiness)="openBusinessProfileById($event)"
+      (openPortal)="openAccountPage()"
+    />
 
-      <article class="highlight-card">
-        <p class="section-kicker">Compra simple</p>
-        <h3>Agrega lo que necesitas y finaliza cuando estes listo</h3>
-        <p>Arma tu pedido por empresa, valida el monto minimo y completa tus datos solo al momento de comprar.</p>
-      </article>
-
-      <article class="highlight-card">
-        <p class="section-kicker">Oferta variada</p>
-        <h3>Compara varias empresas desde LocalShop</h3>
-        <p>Explora productos de distintas ciudades y encuentra opciones que se ajusten a tu gusto, necesidad y presupuesto.</p>
-      </article>
-    </section>
-
-    <section class="featured-section">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">Productos atractivos</p>
-          <h2>Descubre productos destacados para regalos, antojos, detalles y compras de todo tipo</h2>
-        </div>
-        <span class="section-copy">Abre la empresa que te interese y continua tu compra desde su perfil.</span>
-      </div>
-
-      <div class="featured-grid">
-        @for (product of featuredProducts(); track product.productId) {
-          <article class="featured-card">
-            <img [src]="product.imageUrl" [alt]="product.name" (click)="openProductProfile(product)" />
-            <div class="featured-copy">
-              <span class="featured-tag">{{ product.businessName }}</span>
-              <h3>{{ product.name }}</h3>
-              <p>{{ product.description }}</p>
-              <small>{{ product.city }} | {{ product.category }}</small>
-              <strong>{{ product.price | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
-              <div class="inline-actions">
-                <button class="mini-action" type="button" (click)="openProductProfile(product)">Ver empresa</button>
-                <button class="ghost-button" type="button" (click)="addToCart(product)">Agregar</button>
-              </div>
-            </div>
-          </article>
-        }
-      </div>
-    </section>
-
-    <section class="catalog-section" id="vitrina">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">Vitrina general</p>
-          <h2>Explora productos y servicios en una sola busqueda</h2>
-        </div>
-        <p class="section-copy">{{ filteredProducts().length }} resultados con los filtros actuales.</p>
-      </div>
-
-      <div class="category-row">
-        <button
-          class="category-pill"
-          [class.active]="activeCategory() === 'Todas'"
-          type="button"
-          (click)="setCategory('Todas')"
-        >
-          Todas
-        </button>
-
-        @for (category of availableCategories(); track category) {
-          <button
-            class="category-pill"
-            [class.active]="activeCategory() === category"
-            type="button"
-            (click)="setCategory(category)"
-          >
-            {{ category }}
-          </button>
-        }
-      </div>
-
-      @if (filteredProducts().length === 0) {
-        <article class="empty-card">
-          <p class="section-kicker">Sin coincidencias</p>
-          <h3>No encontramos productos con esa busqueda. Prueba otra palabra o categoria.</h3>
-        </article>
-      } @else {
-        <div class="product-grid">
-          @for (product of filteredProducts(); track product.productId) {
-            <article class="product-card">
-              <div class="product-visual" (click)="openProductProfile(product)">
-                <img [src]="product.imageUrl" [alt]="product.name" />
-                @if (product.isFeatured) {
-                  <span class="product-badge">Atractivo</span>
-                }
-              </div>
-
-              <div class="product-body">
-                <div class="product-meta">
-                  <span>{{ product.businessName }}</span>
-                  <span>{{ product.city }}</span>
-                </div>
-                <h3>{{ product.name }}</h3>
-                <p>{{ product.description }}</p>
-                <small>{{ product.category }}</small>
-              </div>
-
-              <div class="product-footer">
-                <div>
-                  <strong>{{ product.price | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
-                  <span>Agrega 1 unidad por clic</span>
-                </div>
-                <div class="inline-actions">
-                  <button class="ghost-button" type="button" (click)="openProductProfile(product)">Ver empresa</button>
-                  <button class="mini-action" type="button" (click)="addToCart(product)">Agregar</button>
-                </div>
-              </div>
-            </article>
-          }
-        </div>
-      }
-    </section>
-
-    <section class="business-section" id="empresas">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">Microempresas</p>
-          <h2>Conoce las empresas que hoy estan listas para atender tu pedido</h2>
-        </div>
-        <p class="section-copy">Explora perfiles empresariales, compara estilos y entra directo al catalogo que prefieras.</p>
-      </div>
-
-      <div class="business-grid">
-        @for (business of businesses(); track business.businessId) {
-          <article class="business-card" [class.active]="selectedBusiness()?.businessId === business.businessId">
-            <img class="business-card-banner" [src]="business.bannerUrl" [alt]="business.businessName" />
-            <div class="business-card-body">
-              <div class="business-card-head">
-                <div class="owner-badge compact">{{ initials(business.businessName) }}</div>
-                <div class="business-card-copy">
-                  <strong>{{ business.businessName }}</strong>
-                  <span>{{ business.city }}</span>
-                  <p>{{ business.tagline }}</p>
-                </div>
-              </div>
-              <div class="business-card-summary">
-                <p>{{ business.description }}</p>
-                <small>{{ business.ownerName }}</small>
-                <small>{{ business.products.length }} productos publicados</small>
-              </div>
-              <div class="inline-actions business-card-actions">
-                <button class="ghost-button" type="button" (click)="previewBusiness(business.businessId)">
-                  Vista previa
-                </button>
-                <button class="mini-action" type="button" (click)="openBusinessProfileById(business.businessId)">
-                  Abrir perfil
-                </button>
-              </div>
-            </div>
-          </article>
-        }
-      </div>
-    </section>
   </main>
 
   <footer class="footer">
     <p>LocalShop | {{ currentYear }}</p>
     <div class="inline-actions">
-      @if (cartCount() > 0) {
+      @if (!isAuthenticated() && cartCount() > 0) {
         <button class="ghost-button" type="button" (click)="openCurrentCartBusiness()">
           Ir al carrito
         </button>
       }
-      <a class="ghost-button" routerLink="/portal">Acceso empresarial</a>
+      @if (isAuthenticated()) {
+        <a class="ghost-button" routerLink="/portal">Portal empresarial</a>
+      } @else if (!currentCustomer()) {
+        <a class="ghost-button" routerLink="/cliente">Cuenta cliente</a>
+      }
     </div>
   </footer>
 </div>
 
-@if (cartNotice(); as notice) {
-  <div class="cart-toast" [class.visible]="true">
-    <div class="cart-toast-copy">
-      <strong>Producto agregado</strong>
-      <span>{{ notice }}</span>
+  @if (!isAuthenticated() && cartNotice(); as notice) {
+    <div class="cart-toast" [class.visible]="true">
+      <div class="cart-toast-copy">
+        <strong>Producto agregado</strong>
+        <span>{{ notice }}</span>
+      </div>
+      @if (cartCount() > 0) {
+        <button class="cart-toast-action" type="button" (click)="openCurrentCartBusiness()">Ir al carrito</button>
+      }
     </div>
-    @if (cartCount() > 0) {
-      <button class="cart-toast-action" type="button" (click)="openCurrentCartBusiness()">Ir al carrito</button>
-    }
-  </div>
-}
+  }

@@ -1,165 +1,268 @@
-# Marketplace Multiempresa
+# LocalShop - Marketplace multiempresa
 
-Aplicacion web para que cualquier empresario registre su empresa, inicie sesion cuando lo necesite, actualice su perfil publico y publique productos en una vitrina compartida.
+LocalShop es una aplicacion web para microempresas. Permite publicar productos, administrar perfiles comerciales y recibir pedidos desde una vitrina compartida. Los compradores pueden revisar empresas, ver productos y agregar articulos al carrito sin iniciar sesion. Para confirmar una compra deben registrarse o iniciar sesion como clientes.
 
-## Que hace el proyecto
+## Tecnologias
 
-- Permite registrar multiples empresas con credenciales independientes.
-- Guarda los perfiles empresariales y productos en SQL Server.
-- Mantiene sesion por token para que cada empresario edite solo su propio catalogo.
-- Muestra un marketplace publico con 3 empresas demo profesionales y 9 productos iniciales.
-- Permite crear pedidos sin que el comprador tenga que registrarse.
+| Capa | Tecnologia | Ubicacion |
+|---|---|---|
+| Frontend | Angular 21 | `frontend/` |
+| Backend | ASP.NET Core Web API (.NET 10) | `backend/` |
+| Base de datos | SQL Server 2022 | `database/sqlserver/` |
+| Contenedores | Docker Compose | `docker-compose.yml` |
+| Servidor web | Nginx | `frontend/nginx.conf` |
 
-## Estructura del repositorio
+## Estructura general
 
-- `frontend/`: Angular 21 con la vitrina publica y el portal empresarial.
-- `backend/`: ASP.NET Core Web API con autenticacion, productos, pedidos y persistencia SQL Server.
-- `database/sqlserver/init.sql`: script que reconstruye la base completa y carga las 3 empresas demo.
-- `docs/ARQUITECTURA.md`: guia rapida para revisar responsabilidades, flujos y archivos clave.
-- `docs/MODULOS.md`: mapa de modulos para ubicar login, empresas, vitrina/productos y carrito.
+```text
+PaginaWeb/
+|-- frontend/                         Aplicacion web Angular
+|   |-- src/
+|   |   |-- main.ts                    Punto de entrada del frontend
+|   |   |-- styles.css                 Estilos globales
+|   |   `-- app/                       Codigo principal de Angular
+|   |-- public/                        Imagenes, logos y favicon
+|   |-- angular.json                   Configuracion Angular
+|   |-- package.json                   Scripts y dependencias npm
+|   |-- Dockerfile                     Compilacion del frontend para Docker
+|   `-- nginx.conf                     Servidor SPA y proxy hacia la API
+|-- backend/                          API REST en .NET
+|   |-- Program.cs                     Configuracion principal de la API
+|   |-- Controllers/                   Endpoints HTTP
+|   |-- Contracts/                     Objetos request/response
+|   |-- Repositories/                  Acceso a datos y reglas SQL
+|   |-- Extensions/                    Registro de servicios
+|   |-- appsettings.json               Configuracion base
+|   |-- appsettings.Development.json   Configuracion local
+|   `-- Dockerfile                     Publicacion del backend para Docker
+|-- database/
+|   `-- sqlserver/                     Scripts de base de datos
+|       |-- docker-init.sql            Inicializacion usada por Docker
+|       |-- init.sql                   Script completo para recrear la base
+|       `-- migrations/                Cambios incrementales
+|-- docs/
+|   |-- ARQUITECTURA.md                Explicacion tecnica de capas y flujos
+|   `-- MODULOS.md                     Guia detallada de carpetas y archivos
+|-- docker-compose.yml                Servicios locales
+|-- .env.example                      Variables de entorno de ejemplo
+|-- PaginaWeb.sln                     Solucion .NET
+`-- README.md                         Guia principal
+```
 
-## Modulos principales del frontend
+## Donde se encuentra cada parte
 
-- `frontend/src/app/features/auth`: inicio de sesion, registro y portal empresarial.
-- `frontend/src/app/features/businesses`: perfiles publicos de empresas.
-- `frontend/src/app/features/marketplace`: vitrina publica y productos.
-- `frontend/src/app/features/cart`: carrito y checkout multiempresa.
-- `frontend/src/app/core`: modelos y servicios compartidos.
-- `frontend/src/app/shared`: estilos compartidos.
+| Necesidad | Ruta |
+|---|---|
+| Cambiar rutas de la pagina | `frontend/src/app/app.routes.ts` |
+| Cambiar configuracion de Angular | `frontend/src/app/app.config.ts` |
+| Cambiar barra, menu o layout general | `frontend/src/app/layout/` |
+| Cambiar pagina principal | `frontend/src/app/features/marketplace/pages/marketplace-page/` |
+| Cambiar catalogo general | `frontend/src/app/features/marketplace/pages/catalog-page/` |
+| Cambiar listado de productos | `frontend/src/app/features/marketplace/pages/products-page/` |
+| Cambiar listado de empresas | `frontend/src/app/features/marketplace/pages/businesses-page/` |
+| Cambiar perfil publico de empresa | `frontend/src/app/features/businesses/pages/business-profile-page/` |
+| Cambiar portal empresarial | `frontend/src/app/features/auth/pages/portal-page/` |
+| Cambiar cuenta del comprador | `frontend/src/app/features/customers/pages/customer-account-page/` |
+| Cambiar carrito | `frontend/src/app/features/cart/pages/cart-page/` |
+| Cambiar pago | `frontend/src/app/features/cart/pages/payment-page/` |
+| Cambiar estilos compartidos de formularios, botones y tarjetas | `frontend/src/app/shared/styles/marketplace-shared.css` |
+| Cambiar modelos TypeScript | `frontend/src/app/core/models/` |
+| Cambiar llamadas HTTP del frontend | `frontend/src/app/core/services/` |
+| Cambiar validaciones de formularios | `frontend/src/app/core/validators/form.validators.ts` |
+| Cambiar endpoints de la API | `backend/Controllers/` |
+| Cambiar contratos de entrada y salida | `backend/Contracts/` |
+| Cambiar consultas SQL o reglas de persistencia | `backend/Repositories/` |
+| Cambiar tablas o datos iniciales | `database/sqlserver/` |
+| Cambiar servicios Docker | `docker-compose.yml` |
 
-## Cuentas demo
+## Ejecucion con Docker
 
-Clave para todas: `Empresa2026!`
-
-- `contacto@andespack.co` -> Andes Pack Studio
-- `direccion@auracafe.co` -> Aura Cafe Ejecutivo
-- `comercial@lumenverde.co` -> Lumen Verde Bienestar
-
-## Empresas demo sembradas
-
-### Andes Pack Studio
-- Ciudad: Medellin
-- Direccion: Cra. 43A #18 Sur-135, El Poblado, Medellin
-- Enfoque: empaques corporativos reutilizables y presentacion de marca
-
-### Aura Cafe Ejecutivo
-- Ciudad: Bogota
-- Direccion: Calle 85 #12-36, Chapinero, Bogota
-- Enfoque: coffee breaks, desayunos y hospitalidad ejecutiva
-
-### Lumen Verde Bienestar
-- Ciudad: Cali
-- Direccion: Avenida 6N #28N-45, Granada, Cali
-- Enfoque: bienestar corporativo, fruta fresca y alimentacion saludable
-
-## Flujo recomendado para correrlo
-
-### Opcion recomendada: Docker
-
-Este modo evita problemas de versiones locales, rutas `Path/PATH`, SQL Server instalado en Windows o configuraciones ODBC del equipo.
+Desde la raiz del proyecto:
 
 ```powershell
 docker compose up --build
 ```
 
-Si `4200` ya esta ocupado por otro proyecto, usa otro puerto sin tocar el codigo:
+Servicios principales:
+
+| Servicio | URL o puerto | Archivo relacionado |
+|---|---|---|
+| Aplicacion web | `http://localhost:4200` | `frontend/nginx.conf` |
+| API | `http://localhost:5057` | `backend/Program.cs` |
+| Health check | `http://localhost:5057/health` | `backend/Program.cs` |
+| SQL Server | `localhost,14333` | `docker-compose.yml` |
+
+Para reconstruir despues de cambios en frontend, backend o base:
 
 ```powershell
-$env:FRONTEND_PORT=4201
-docker compose up --build
+docker compose up --build -d frontend
 ```
 
-Servicios:
+La aplicacion debe seguir usando `http://localhost:4200`. No hace falta crear otro servidor para ver los cambios.
 
-- Frontend: [http://localhost:4200](http://localhost:4200)
-- Backend: [http://localhost:5057](http://localhost:5057)
-- Health backend: [http://localhost:5057/health](http://localhost:5057/health)
-- SQL Server Docker: `localhost,14333`
+## Ejecucion local sin Docker completo
 
-Credenciales SQL Server del contenedor:
-
-- Usuario: `sa`
-- Clave: `LocalShop2026!Docker`
-
-Para cambiar clave o puertos, copia `.env.example` a `.env` y ajusta `MSSQL_SA_PASSWORD`, `FRONTEND_PORT`, `BACKEND_PORT` o `MSSQL_HOST_PORT`.
-
-El script `database/sqlserver/docker-init.sql` crea la base, aplica cambios faltantes y carga datos demo solo si la base esta vacia.
-
-### Opcion local sin Docker
-
-1. Inicializa la base:
+1. Levantar SQL Server y el inicializador de base:
 
 ```powershell
-sqlcmd -S localhost -E -i database\sqlserver\init.sql
+docker compose up -d sqlserver database-init
 ```
 
-Si `sqlcmd` falla por configuracion local, puedes ejecutar el mismo script con PowerShell usando `SqlClient` o `Invoke-Sqlcmd`.
-
-Si ya tienes datos y no quieres recrear la base, aplica la migracion no destructiva:
-
-```powershell
-sqlcmd -S localhost -E -i database\sqlserver\migrations\2026-05-03-add-product-archive.sql
-```
-
-2. Inicia el backend:
+2. Ejecutar el backend:
 
 ```powershell
 cd backend
 dotnet run --launch-profile http
 ```
 
-3. Inicia el frontend:
+3. Ejecutar el frontend:
 
 ```powershell
 cd frontend
+npm install
 npm start -- --host 0.0.0.0 --port 4200
 ```
 
-## URLs principales
+## Frontend
 
-- Frontend: [http://localhost:4200](http://localhost:4200)
-- Marketplace API: [http://localhost:5057/api/store/overview](http://localhost:5057/api/store/overview)
-- Login: `POST http://localhost:5057/api/auth/login`
-- Registro: `POST http://localhost:5057/api/auth/register`
+Codigo principal: `frontend/src/app/`.
 
-## Endpoints clave
+| Ruta | Funcion |
+|---|---|
+| `frontend/src/main.ts` | Arranca Angular y carga `AppShell` |
+| `frontend/src/styles.css` | Importa estilos globales |
+| `frontend/src/app/app.config.ts` | Configura providers de Angular y HTTP |
+| `frontend/src/app/app.routes.ts` | Define las rutas visibles de la web |
+| `frontend/src/app/layout/` | Contenedor principal, navegacion y estructura base |
+| `frontend/src/app/core/models/` | Interfaces compartidas |
+| `frontend/src/app/core/services/` | Servicios para API, sesion, carrito y pedidos |
+| `frontend/src/app/core/validators/` | Validadores de formularios |
+| `frontend/src/app/features/` | Paginas por modulo funcional |
+| `frontend/src/app/shared/styles/` | Estilos reutilizables |
+| `frontend/public/assets/images/` | Imagenes, banners, logos e iconos |
+
+Cada pantalla normalmente tiene tres archivos:
+
+| Extension | Funcion |
+|---|---|
+| `.ts` | Logica del componente, estado, llamadas a servicios y eventos |
+| `.html` | Estructura visual de la pantalla |
+| `.css` | Estilos propios de esa pantalla |
+
+## Backend
+
+Codigo principal: `backend/`.
+
+| Ruta | Funcion |
+|---|---|
+| `backend/Program.cs` | Registra servicios, CORS, controladores, Swagger, health check y repositorio |
+| `backend/Controllers/` | Recibe las peticiones HTTP |
+| `backend/Contracts/` | Define datos que entran y salen de la API |
+| `backend/Repositories/IStoreRepository.cs` | Contrato del repositorio usado por los controladores |
+| `backend/Repositories/SqlStoreRepository*.cs` | Implementacion SQL Server organizada por dominio |
+| `backend/Extensions/ServiceCollectionExtensions.cs` | Configuracion de servicios auxiliares |
+| `backend/appsettings.json` | Configuracion general |
+| `backend/appsettings.Development.json` | Configuracion para desarrollo |
+| `backend/TiendaMicroempresas.Api.csproj` | Dependencias y version del proyecto .NET |
+
+## Base de datos
+
+Ruta principal: `database/sqlserver/`.
+
+| Archivo | Uso |
+|---|---|
+| `database/sqlserver/docker-init.sql` | Crea o actualiza la base cuando se levanta Docker. Conserva datos existentes cuando es posible |
+| `database/sqlserver/init.sql` | Recrea toda la base desde cero. Es util para reinicios completos |
+| `database/sqlserver/migrations/2026-05-03-add-product-archive.sql` | Agrega soporte para archivar productos sin perder historial |
+
+Base por defecto: `TiendaMicroempresas`.
+
+| Tabla | Uso |
+|---|---|
+| `Businesses` | Empresas registradas, perfil publico y credenciales |
+| `BusinessSessions` | Tokens activos de empresas |
+| `Products` | Productos publicados, stock, precios y estado |
+| `Customers` | Compradores registrados |
+| `CustomerSessions` | Tokens activos de clientes |
+| `Orders` | Encabezado de cada pedido |
+| `OrderItems` | Productos incluidos en cada pedido |
+
+## Cuentas empresariales de prueba
+
+Todas usan la clave `Empresa2026!`.
+
+| Correo | Empresa | Ciudad |
+|---|---|---|
+| `contacto@andespack.co` | Andes Pack Studio | Medellin |
+| `direccion@auracafe.co` | Aura Cafe Ejecutivo | Bogota |
+| `comercial@lumenverde.co` | Lumen Verde Bienestar | Cali |
+
+## Flujo de comprador
+
+1. Entra a la vitrina publica desde `/`.
+2. Revisa empresas y productos.
+3. Agrega productos al carrito desde el marketplace, catalogo o perfil de empresa.
+4. Puede modificar cantidades en `/carrito` sin tener cuenta.
+5. Para entrar al pago en `/pago`, debe registrarse o iniciar sesion como cliente.
+6. La compra se envia al backend por `POST /api/orders/checkout`.
+7. La API valida sesion, stock, productos publicados y totales.
+8. El pedido queda guardado para el cliente y para la empresa.
+
+## Flujo de empresa
+
+1. Entra a `/portal`.
+2. Registra la empresa o inicia sesion.
+3. Administra datos publicos del negocio.
+4. Crea, edita, publica, oculta o archiva productos.
+5. Consulta pedidos recibidos.
+
+## Endpoints principales
 
 ### Publicos
 
-- `GET /api/store/overview`: devuelve empresas, productos destacados, categorias y totales.
-- `POST /api/orders`: crea un pedido para una empresa especifica.
+| Metodo | Ruta | Controlador |
+|---|---|---|
+| GET | `/api/store/overview` | `backend/Controllers/StoreController.cs` |
 
-### Empresariales
+### Clientes
 
-- `POST /api/auth/register`: crea una nueva empresa y abre sesion.
-- `POST /api/auth/login`: inicia sesion.
-- `GET /api/auth/me`: devuelve el perfil completo de la empresa autenticada.
-- `PUT /api/auth/me`: actualiza el perfil de la empresa autenticada.
-- `POST /api/auth/logout`: cierra sesion.
-- `GET /api/admin/catalog`: devuelve el perfil autenticado y sus categorias activas.
-- `POST /api/admin/products`: crea producto.
-- `PUT /api/admin/products/{productId}`: actualiza producto.
-- `DELETE /api/admin/products/{productId}`: elimina producto.
+| Metodo | Ruta | Controlador |
+|---|---|---|
+| POST | `/api/customers/register` | `backend/Controllers/CustomersController.cs` |
+| POST | `/api/customers/login` | `backend/Controllers/CustomersController.cs` |
+| GET | `/api/customers/me` | `backend/Controllers/CustomersController.cs` |
+| PUT | `/api/customers/me` | `backend/Controllers/CustomersController.cs` |
+| DELETE | `/api/customers/me` | `backend/Controllers/CustomersController.cs` |
+| GET | `/api/customers/orders` | `backend/Controllers/CustomersController.cs` |
+| POST | `/api/orders/checkout` | `backend/Controllers/OrdersController.cs` |
 
-## Verificacion realizada
+### Empresas
 
-Se verifico manualmente:
+| Metodo | Ruta | Controlador |
+|---|---|---|
+| POST | `/api/auth/register` | `backend/Controllers/AuthController.cs` |
+| POST | `/api/auth/login` | `backend/Controllers/AuthController.cs` |
+| GET | `/api/auth/me` | `backend/Controllers/AuthController.cs` |
+| PUT | `/api/auth/me` | `backend/Controllers/AuthController.cs` |
+| DELETE | `/api/auth/me` | `backend/Controllers/AuthController.cs` |
+| GET | `/api/admin/catalog` | `backend/Controllers/AdminController.cs` |
+| POST | `/api/admin/products` | `backend/Controllers/AdminController.cs` |
+| PUT | `/api/admin/products/{id}` | `backend/Controllers/AdminController.cs` |
+| DELETE | `/api/admin/products/{id}` | `backend/Controllers/AdminController.cs` |
+| GET | `/api/admin/orders` | `backend/Controllers/AdminController.cs` |
 
-- Carga del marketplace desde `GET /api/store/overview`.
-- Registro de una empresa temporal.
-- Inicio de sesion con empresa demo.
-- Lectura y actualizacion de perfil autenticado.
-- Creacion y eliminacion de un producto desde la API privada.
-- Creacion de un pedido.
-- Restauracion final de la base con solo las 3 empresas demo.
-- Compilacion de `backend` y `frontend`.
+## Reglas de negocio importantes
 
-## Notas tecnicas
+- El carrito funciona para usuarios invitados.
+- La confirmacion de compra requiere cuenta de cliente.
+- Las rutas de cliente privadas usan `X-Customer-Token`.
+- Las rutas de empresa privadas usan `X-Owner-Token`.
+- Los productos eliminados se archivan para conservar pedidos anteriores.
+- El checkout valida inventario, estado del producto y pedido minimo.
+- Las claves se guardan con hash PBKDF2.
+- Los tokens de sesion se guardan en SQL Server.
 
-- El frontend ya no usa `localStorage` para guardar empresas ni productos; solo conserva el token de sesion.
-- La sesion empresarial se manda al backend mediante el header `X-Owner-Token`.
-- El script `database/sqlserver/init.sql` borra y recrea la estructura para dejar siempre el entorno limpio.
-- El script `database/sqlserver/docker-init.sql` es idempotente y esta pensado para Docker.
-- Las imagenes de ejemplo viven en `frontend/public/assets/images`.
-- El borrado de productos en el backend es logico (`IsArchived`) para no dañar pedidos ya creados.
-- El frontend consume `/api`; en Docker lo resuelve Nginx y en desarrollo local lo resuelve `frontend/proxy.conf.json`.
+## Documentacion adicional
+
+- `docs/ARQUITECTURA.md`: explica capas, comunicacion, seguridad y flujos.
+- `docs/MODULOS.md`: detalla carpetas, archivos y responsabilidad de cada parte.

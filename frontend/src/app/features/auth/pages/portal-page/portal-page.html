@@ -1,21 +1,42 @@
 <div class="page-shell portal-shell">
+
+  <!-- Modal de confirmacion para eliminar la cuenta empresarial -->
+  @if (showDeleteModal()) {
+    <div class="modal-backdrop" (click)="cancelDeleteBusiness()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <p class="section-kicker">Accion irreversible</p>
+        <h3>¿Eliminar la cuenta empresarial?</h3>
+        <p class="modal-description">
+          Al confirmar, el perfil de tu empresa, sus productos y sesiones activas seran
+          eliminados permanentemente. Los pedidos registrados se conservan en el historial
+          de los compradores para no perder trazabilidad comercial.
+        </p>
+        <div class="modal-actions">
+          <button class="ghost-button" type="button" (click)="cancelDeleteBusiness()" [disabled]="isLoading()">
+            Cancelar
+          </button>
+          <button class="danger-button" type="button" (click)="confirmDeleteBusiness()" [disabled]="isLoading()">
+            Si, eliminar mi empresa
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   <header class="hero-shell portal-hero" [style.background]="portalHeroBackground()">
     <nav class="topbar">
       <a class="brand" routerLink="/">
         <img class="brand-logo" src="/assets/images/localshop-logo-small.png" alt="LocalShop" />
         <div class="brand-copy">
           <strong>LocalShop</strong>
-          <span>Portal empresarial para registrar, editar y publicar tu empresa</span>
+          <span>{{ isAuthenticated() ? 'Portal empresarial activo' : 'Portal empresarial para registrar, editar y publicar tu empresa' }}</span>
         </div>
       </a>
 
       <div class="topbar-links">
-        <a routerLink="/">Inicio</a>
+        <a routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
         @if (isAuthenticated() && currentBusiness(); as business) {
           <a [routerLink]="['/empresa', business.slug]">Perfil publico</a>
-        }
-        @if (cartCount() > 0) {
-          <a routerLink="/carrito">Carrito</a>
         }
       </div>
 
@@ -32,8 +53,8 @@
           <p class="section-kicker">Portal empresarial</p>
           <h1>Registra tu negocio o entra a tu sesion desde una pagina mas clara y ordenada.</h1>
           <p class="hero-description">
-            Crea tu perfil, sube productos, cambia banners y mantén visible tu vitrina en LocalShop desde un solo
-            espacio.
+            Crea tu perfil, sube productos, cambia banners y mantén visible tu vitrina en LocalShop
+            desde un solo espacio.
           </p>
 
           <div class="portal-example-row">
@@ -50,15 +71,22 @@
               <span>Papeleria creativa</span>
             </article>
           </div>
+
+          <div class="account-choice">
+            <button class="tab-button active" type="button">Portal empresarial</button>
+            <a class="tab-button" routerLink="/cliente">Cuenta cliente</a>
+          </div>
         </article>
 
         <section class="portal-auth-card">
-          <div class="auth-switch">
-            <button class="tab-button" [class.active]="authMode() === 'register'" type="button" (click)="authMode.set('register')">
-              Registrarse
+          <div class="auth-switch account-choice">
+            <button class="tab-button" [class.active]="authMode() === 'login'" type="button"
+              (click)="authMode.set('login')">
+              Entrar como empresario
             </button>
-            <button class="tab-button" [class.active]="authMode() === 'login'" type="button" (click)="authMode.set('login')">
-              Iniciar sesion
+            <button class="tab-button" [class.active]="authMode() === 'register'" type="button"
+              (click)="authMode.set('register')">
+              Registrar empresa
             </button>
           </div>
 
@@ -70,101 +98,119 @@
             <form #registerNgForm="ngForm" class="portal-form-card" (ngSubmit)="submitRegister(registerNgForm)">
               <div class="admin-card-head">
                 <div>
-                  <p class="section-kicker">Nuevo perfil</p>
+                  <p class="section-kicker">Registro empresarial</p>
                   <h3>Crea tu empresa</h3>
                 </div>
               </div>
 
+              <p class="required-hint"><span class="required-mark">*</span> Los campos marcados con asterisco son obligatorios</p>
               <div class="form-grid">
                 <label>
-                  Responsable
-                  <input [(ngModel)]="registerForm.ownerName" name="registerOwnerName" placeholder="Ejemplo: Juliana Mena" required type="text" />
+                  Responsable <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.ownerName" name="registerOwnerName"
+                    placeholder="Ejemplo: Juliana Mena" required type="text" />
                 </label>
 
                 <label>
-                  Empresa
-                  <input [(ngModel)]="registerForm.businessName" name="registerBusinessName" placeholder="Ejemplo: Casa Nube Taller" required type="text" />
+                  Empresa <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.businessName" name="registerBusinessName"
+                    placeholder="Ejemplo: Casa Nube Taller" required type="text" />
                 </label>
 
                 <label>
-                  Correo de acceso
-                  <input [(ngModel)]="registerForm.email" name="registerEmail" placeholder="Ejemplo: hola@casanube.co" required type="email" />
+                  Correo de acceso <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.email" name="registerEmail"
+                    placeholder="hola@casanube.co" required type="email" />
                 </label>
 
                 <label>
-                  Contrasena
-                  <input [(ngModel)]="registerForm.password" name="registerPassword" placeholder="Crea una contrasena segura" required type="password" />
+                  Contrasena <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.password" name="registerPassword"
+                    placeholder="Crea una contrasena segura" required type="password" />
                 </label>
 
                 <label>
-                  Telefono o WhatsApp
-                  <input [(ngModel)]="registerForm.phone" name="registerPhone" placeholder="Ejemplo: 3004567890" required type="text" />
+                  Telefono o WhatsApp <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.phone" name="registerPhone"
+                    placeholder="3004567890" required type="text" />
                 </label>
 
                 <label>
-                  Ciudad
-                  <input [(ngModel)]="registerForm.city" name="registerCity" placeholder="Ejemplo: Bogota" required type="text" />
+                  Ciudad <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.city" name="registerCity"
+                    placeholder="Bogota" required type="text" />
                 </label>
 
                 <label>
-                  Direccion
-                  <input [(ngModel)]="registerForm.address" name="registerAddress" placeholder="Ejemplo: Calle 57 # 14-22" required type="text" />
+                  Direccion <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.address" name="registerAddress"
+                    placeholder="Calle 57 # 14-22" required type="text" />
                 </label>
 
                 <label>
-                  Frase corta
-                  <input [(ngModel)]="registerForm.tagline" name="registerTagline" placeholder="Ejemplo: Regalos locales con acabados hechos a mano" required type="text" />
+                  Frase corta de tu marca <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.tagline" name="registerTagline"
+                    placeholder="Regalos locales hechos a mano" required type="text" />
                 </label>
 
                 <label>
-                  Tiempo de entrega
-                  <input [(ngModel)]="registerForm.shippingLeadTime" name="registerShippingLeadTime" placeholder="Ejemplo: 24 a 48 horas" required type="text" />
+                  Tiempo de entrega <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.shippingLeadTime" name="registerShippingLeadTime"
+                    placeholder="24 a 48 horas" required type="text" />
                 </label>
 
                 <label>
-                  Compra minima
-                  <input [(ngModel)]="registerForm.minimumOrderAmount" name="registerMinimumOrderAmount" min="0" placeholder="Ejemplo: 30000" required type="number" />
+                  Compra minima (COP) <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.minimumOrderAmount" name="registerMinimumOrderAmount"
+                    min="0" placeholder="30000" required type="number" />
                 </label>
 
                 <label>
-                  Sitio web
-                  <input [(ngModel)]="registerForm.websiteUrl" name="registerWebsiteUrl" placeholder="Ejemplo: https://casanube.co" type="text" />
+                  Sitio web (opcional)
+                  <input [(ngModel)]="registerForm.websiteUrl" name="registerWebsiteUrl"
+                    placeholder="https://casanube.co" type="text" />
                 </label>
 
                 <label class="form-note">
-                  Descripcion de la empresa
-                  <textarea [(ngModel)]="registerForm.description" name="registerDescription" placeholder="Cuéntale a tus clientes qué vendes, cuál es tu estilo y para quién trabajas." required rows="4"></textarea>
+                  Descripcion de la empresa <span class="required-mark">*</span>
+                  <textarea [(ngModel)]="registerForm.description" name="registerDescription"
+                    placeholder="Cuéntale a tus clientes qué vendes, cuál es tu estilo y para quién trabajas."
+                    required rows="4"></textarea>
                 </label>
               </div>
 
-              <button class="submit-button" type="submit">Crear perfil</button>
+              <button class="submit-button" type="submit" [disabled]="isLoading()">Crear perfil</button>
             </form>
           } @else {
             <form #loginNgForm="ngForm" class="portal-form-card" (ngSubmit)="submitLogin(loginNgForm)">
               <div class="admin-card-head">
                 <div>
-                  <p class="section-kicker">Sesion</p>
-                  <h3>Entra a tu portal</h3>
+                  <p class="section-kicker">Acceso empresarial</p>
+                  <h3>Entra como empresario</h3>
                 </div>
               </div>
 
+              <p class="required-hint"><span class="required-mark">*</span> Todos los campos son obligatorios</p>
               <div class="form-grid">
                 <label>
-                  Correo de acceso
-                  <input [(ngModel)]="loginForm.email" name="loginEmail" placeholder="Ejemplo: hola@casanube.co" required type="email" />
+                  Correo de acceso <span class="required-mark">*</span>
+                  <input [(ngModel)]="loginForm.email" name="loginEmail"
+                    placeholder="hola@casanube.co" required type="email" />
                 </label>
 
                 <label>
-                  Contrasena
-                  <input [(ngModel)]="loginForm.password" name="loginPassword" placeholder="Tu contrasena" required type="password" />
+                  Contrasena <span class="required-mark">*</span>
+                  <input [(ngModel)]="loginForm.password" name="loginPassword"
+                    placeholder="Tu contrasena" required type="password" />
                 </label>
               </div>
 
-              <button class="submit-button" type="submit">Entrar al portal</button>
+              <button class="submit-button" type="submit" [disabled]="isLoading()">Entrar al portal</button>
             </form>
           }
         </section>
       </section>
+
     } @else {
       <section class="portal-hero-grid portal-hero-grid-auth">
         <article class="portal-intro-card compact-intro">
@@ -188,24 +234,25 @@
         </article>
 
         <article class="portal-preview-card">
-          <img class="business-preview-banner" [src]="currentBusiness()?.bannerUrl" [alt]="currentBusiness()?.businessName" />
+          <img class="business-preview-banner" [src]="currentBusiness()?.bannerUrl"
+            [alt]="currentBusiness()?.businessName" />
           <div class="business-preview-body">
             <div class="owner-badge">{{ initials(currentBusiness()?.businessName) }}</div>
             <div class="showcase-copy">
               <p class="section-kicker">Vista publica</p>
               <h2>{{ currentBusiness()?.businessName }}</h2>
-              <span>{{ currentBusiness()?.tagline }}</span>
-              <p>{{ currentBusiness()?.city }} | {{ currentBusiness()?.address }}</p>
-              <small>{{ currentBusiness()?.phone }} | {{ currentBusiness()?.email }}</small>
+              <span class="preview-tagline">{{ currentBusiness()?.tagline }}</span>
+              <p class="preview-detail">{{ currentBusiness()?.city }} &mdash; {{ currentBusiness()?.address }}</p>
+              <p class="preview-detail">{{ currentBusiness()?.phone }}</p>
             </div>
           </div>
           <div class="inline-actions">
             @if (currentBusiness(); as business) {
               <a class="ghost-button" [routerLink]="['/empresa', business.slug]">Ver perfil publico</a>
             }
-            @if (cartCount() > 0) {
-              <a class="mini-action" routerLink="/carrito">Ir al carrito</a>
-            }
+            <button class="ghost-button danger-ghost" type="button" (click)="requestDeleteBusiness()">
+              Eliminar cuenta
+            </button>
           </div>
         </article>
       </section>
@@ -220,7 +267,7 @@
     @if (isLoading()) {
       <article class="empty-card">
         <p class="section-kicker">Cargando</p>
-        <h3>Estamos preparando tu portal empresarial.</h3>
+        <h3>Preparando tu portal empresarial.</h3>
       </article>
     }
 
@@ -234,70 +281,73 @@
             </div>
           </div>
 
+          <p class="required-hint"><span class="required-mark">*</span> Los campos marcados con asterisco son obligatorios</p>
           <div class="form-grid">
             <label>
-              Responsable
+              Responsable <span class="required-mark">*</span>
               <input [(ngModel)]="businessProfileForm.ownerName" name="businessOwnerName" required type="text" />
             </label>
 
             <label>
-              Nombre del negocio
+              Nombre del negocio <span class="required-mark">*</span>
               <input [(ngModel)]="businessProfileForm.businessName" name="businessBusinessName" required type="text" />
             </label>
 
             <label>
-              Correo empresarial
+              Correo empresarial <span class="required-mark">*</span>
               <input [(ngModel)]="businessProfileForm.email" name="businessEmail" required type="email" />
             </label>
 
             <label>
-              Telefono
+              Telefono <span class="required-mark">*</span>
               <input [(ngModel)]="businessProfileForm.phone" name="businessPhone" required type="text" />
             </label>
 
             <label>
-              Ciudad
+              Ciudad <span class="required-mark">*</span>
               <input [(ngModel)]="businessProfileForm.city" name="businessCity" required type="text" />
             </label>
 
             <label>
-              Direccion
+              Direccion <span class="required-mark">*</span>
               <input [(ngModel)]="businessProfileForm.address" name="businessAddress" required type="text" />
             </label>
 
             <label>
-              Frase de marca
+              Frase de marca <span class="required-mark">*</span>
               <input [(ngModel)]="businessProfileForm.tagline" name="businessTagline" required type="text" />
             </label>
 
             <label>
-              Tiempo de envio
+              Tiempo de envio <span class="required-mark">*</span>
               <input [(ngModel)]="businessProfileForm.shippingLeadTime" name="businessLeadTime" required type="text" />
             </label>
 
             <label>
-              Pedido minimo
-              <input [(ngModel)]="businessProfileForm.minimumOrderAmount" name="businessMinimumOrderAmount" min="0" required type="number" />
+              Pedido minimo (COP) <span class="required-mark">*</span>
+              <input [(ngModel)]="businessProfileForm.minimumOrderAmount" name="businessMinimumOrderAmount"
+                min="0" required type="number" />
             </label>
 
             <label>
-              Logo de la empresa
+              Logo de la empresa (URL) <span class="required-mark">*</span>
               <input [(ngModel)]="businessProfileForm.logoUrl" name="businessLogoUrl" required type="text" />
             </label>
 
             <label>
-              Fondo de portada
+              Fondo de portada (URL) <span class="required-mark">*</span>
               <input [(ngModel)]="businessProfileForm.bannerUrl" name="businessBannerUrl" required type="text" />
             </label>
 
             <label>
-              Sitio web
+              Sitio web (opcional)
               <input [(ngModel)]="businessProfileForm.websiteUrl" name="businessWebsiteUrl" type="text" />
             </label>
 
             <label class="form-note">
-              Descripcion
-              <textarea [(ngModel)]="businessProfileForm.description" name="businessDescription" required rows="5"></textarea>
+              Descripcion <span class="required-mark">*</span>
+              <textarea [(ngModel)]="businessProfileForm.description" name="businessDescription"
+                required rows="5"></textarea>
             </label>
           </div>
 
@@ -316,34 +366,35 @@
               }
             </div>
 
+            <p class="required-hint"><span class="required-mark">*</span> Los campos marcados con asterisco son obligatorios</p>
             <div class="form-grid">
               <label>
-                Nombre
+                Nombre <span class="required-mark">*</span>
                 <input [(ngModel)]="productForm.name" name="productName" required type="text" />
               </label>
 
               <label>
-                Categoria
+                Categoria <span class="required-mark">*</span>
                 <input [(ngModel)]="productForm.category" name="productCategory" required type="text" />
               </label>
 
               <label>
-                Precio
+                Precio (COP) <span class="required-mark">*</span>
                 <input [(ngModel)]="productForm.price" name="productPrice" min="0" required type="number" />
               </label>
 
               <label>
-                Pedido minimo
+                Pedido minimo <span class="required-mark">*</span>
                 <input [(ngModel)]="productForm.minimumOrder" name="productMinimumOrder" min="1" required type="number" />
               </label>
 
               <label>
-                Stock
+                Stock disponible <span class="required-mark">*</span>
                 <input [(ngModel)]="productForm.stock" name="productStock" min="0" required type="number" />
               </label>
 
               <label>
-                Imagen URL
+                Imagen (URL) <span class="required-mark">*</span>
                 <input [(ngModel)]="productForm.imageUrl" name="productImageUrl" required type="text" />
               </label>
 
@@ -358,7 +409,7 @@
               </label>
 
               <label class="form-note">
-                Descripcion
+                Descripcion <span class="required-mark">*</span>
                 <textarea [(ngModel)]="productForm.description" name="productDescription" required rows="4"></textarea>
               </label>
             </div>

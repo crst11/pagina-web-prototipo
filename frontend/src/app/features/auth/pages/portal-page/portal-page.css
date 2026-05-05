@@ -10,7 +10,7 @@
 .portal-login-grid,
 .order-feed-items {
   display: grid;
-  gap: 22px;
+  gap: 28px;
 }
 
 .portal-hero-grid {
@@ -29,8 +29,9 @@
 .portal-tip-card {
   border: 1px solid var(--line);
   border-radius: 30px;
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 24px 60px rgba(18, 48, 71, 0.08);
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: 0 24px 60px rgba(8, 124, 117, 0.08);
   backdrop-filter: blur(14px);
 }
 
@@ -62,7 +63,7 @@
 .portal-form-card,
 .portal-preview-card {
   display: grid;
-  gap: 18px;
+  gap: 24px;
 }
 
 .portal-auth-card {
@@ -87,8 +88,8 @@
   gap: 6px;
   padding: 18px;
   border-radius: 22px;
-  border: 1px solid rgba(72, 145, 184, 0.12);
-  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--line);
+  background: #f7fffd;
 }
 
 .example-chip strong,
@@ -117,10 +118,145 @@
 
 .portal-panel-card {
   min-width: 0;
+  display: grid;
+  gap: 20px;
 }
 
 .portal-preview-card .inline-actions {
   justify-content: flex-start;
+}
+
+/* Previene que el texto en la tarjeta de vista previa se desborde */
+.business-preview-body {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.showcase-copy {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 4px;
+}
+
+.showcase-copy h2 {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-tagline {
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.preview-detail {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Boton de peligro en la tarjeta de preview */
+.danger-ghost {
+  color: #c0392b;
+  border-color: #c0392b;
+}
+
+.danger-ghost:hover {
+  background: rgba(192, 57, 43, 0.06);
+}
+
+/* ----- Modal de confirmacion ----- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 20, 20, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.18s ease;
+}
+
+.modal-card {
+  background: #ffffff;
+  border-radius: 26px;
+  border: 1px solid var(--line);
+  box-shadow: 0 32px 80px rgba(8, 124, 117, 0.18);
+  padding: clamp(24px, 5vw, 40px);
+  max-width: 440px;
+  width: 90%;
+  display: grid;
+  gap: 16px;
+  animation: slideUp 0.22s ease;
+}
+
+.modal-card h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--ink);
+}
+
+.modal-description {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+  font-size: 0.93rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.modal-actions .ghost-button {
+  flex: 1;
+}
+
+.danger-button {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid #c0392b;
+  border-radius: 999px;
+  background: #c0392b;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.danger-button:hover {
+  background: #a93226;
+}
+
+.danger-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 
 .order-feed-card {
@@ -154,9 +290,9 @@
 .order-feed-items span {
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.84);
-  border: 1px solid rgba(72, 145, 184, 0.12);
-  color: var(--ink);
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: #087c75;
 }
 
 @media (max-width: 1120px) {

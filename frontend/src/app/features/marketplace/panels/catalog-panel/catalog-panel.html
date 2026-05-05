@@ -1,0 +1,81 @@
+<section class="panel-section catalog-panel" id="vitrina">
+  <div class="section-heading">
+    <div>
+      <p class="section-kicker">Vitrina general</p>
+      <h2>Explora todos los productos en una sola busqueda</h2>
+    </div>
+    <p class="section-copy">{{ filteredProducts.length }} resultados con los filtros actuales.</p>
+  </div>
+
+  <div class="category-row">
+    <button
+      class="category-pill"
+      [class.active]="activeCategory === 'Todas'"
+      type="button"
+      (click)="categoryChange.emit('Todas')"
+    >
+      Todas
+    </button>
+
+    @for (category of availableCategories; track category) {
+      <button
+        class="category-pill"
+        [class.active]="activeCategory === category"
+        type="button"
+        (click)="categoryChange.emit(category)"
+      >
+        {{ category }}
+      </button>
+    }
+  </div>
+
+  @if (filteredProducts.length === 0) {
+    <article class="empty-card">
+      <p class="section-kicker">Sin coincidencias</p>
+      <h3>No encontramos productos con esa busqueda. Prueba otra palabra o categoria.</h3>
+    </article>
+  } @else {
+    <div class="product-grid">
+      @for (product of filteredProducts; track product.productId) {
+        <article class="product-card" [class.product-card-expanded]="isProductDescriptionExpanded(product.productId)">
+          <div class="product-visual" (click)="openProductProfile.emit(product)">
+            <img [src]="product.imageUrl" [alt]="product.name" />
+            @if (product.isFeatured) {
+              <span class="product-badge">Destacado</span>
+            }
+          </div>
+
+          <div class="product-body">
+            <div class="product-meta">
+              <span>{{ product.businessName }}</span>
+              <span>{{ product.city }}</span>
+            </div>
+            <h3>{{ product.name }}</h3>
+            <p class="product-description" [class.product-description-expanded]="isProductDescriptionExpanded(product.productId)">
+              {{ productSummary(product.description, product.productId) }}
+              <button class="description-toggle" type="button" (click)="toggleProductDescription(product.productId)">
+                {{ isProductDescriptionExpanded(product.productId) ? 'Menos' : 'Mas' }}
+              </button>
+            </p>
+            <small>{{ product.category }}</small>
+          </div>
+
+          <div class="product-footer">
+            <div>
+              <strong>{{ product.price | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+              @if (isProductDescriptionExpanded(product.productId)) {
+                <span>Agrega 1 unidad por clic</span>
+              }
+            </div>
+            @if (isProductDescriptionExpanded(product.productId)) {
+              <div class="inline-actions product-actions-revealed">
+                <button class="ghost-button" type="button" (click)="openProductProfile.emit(product)">Ver empresa</button>
+                <button class="mini-action" type="button" (click)="addToCart.emit(product)">Agregar</button>
+              </div>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

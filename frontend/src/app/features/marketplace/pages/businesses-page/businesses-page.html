@@ -1,0 +1,51 @@
+<div class="page-shell routed-marketplace-page">
+  <header class="hero-shell">
+    <nav class="topbar">
+      <a class="brand" routerLink="/">
+        <img class="brand-logo" src="/assets/images/localshop-logo-small.png" alt="LocalShop" />
+        <div class="brand-copy">
+          <strong>LocalShop</strong>
+          <span>Directorio de microempresas registradas</span>
+        </div>
+      </a>
+
+      <div class="topbar-links">
+        <a routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+        <a routerLink="/productos" routerLinkActive="active-link">Productos</a>
+        <a routerLink="/vitrina" routerLinkActive="active-link">Vitrina</a>
+        <a routerLink="/empresas" routerLinkActive="active-link">Empresas</a>
+        @if (!currentBusiness()) {
+          <a routerLink="/carrito" routerLinkActive="active-link">Carrito</a>
+        }
+        @if (currentCustomer()) {
+          <a routerLink="/cliente" routerLinkActive="active-link">Cuenta cliente</a>
+        } @else if (currentBusiness()) {
+          <a routerLink="/portal" routerLinkActive="active-link">Portal empresarial</a>
+        } @else {
+          <a routerLink="/cliente" routerLinkActive="active-link">Cuenta cliente</a>
+          <a routerLink="/portal" routerLinkActive="active-link">Portal empresarial</a>
+        }
+      </div>
+
+      @if (!currentBusiness() && cartCount() > 0) {
+        <button class="ghost-button cart-trigger" [class.cart-trigger-pulse]="cartPulse()" type="button" (click)="openCurrentCartBusiness()">
+          <span>Carrito</span>
+          <strong class="cart-count-badge">{{ cartCount() }}</strong>
+        </button>
+      }
+    </nav>
+  </header>
+
+  <main class="content-shell">
+    @if (pageFeedback(); as status) {
+      <p class="feedback error">{{ status.message }}</p>
+    }
+
+    <app-businesses-panel
+      [businesses]="businesses()"
+      [selectedBusiness]="selectedBusiness()"
+      (previewBusiness)="previewBusiness($event)"
+      (openBusiness)="openBusinessProfileById($event)"
+    />
+  </main>
+</div>

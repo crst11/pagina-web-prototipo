@@ -1,0 +1,353 @@
+<div class="page-shell customer-shell">
+
+  <!-- Modal de confirmacion para eliminar la cuenta -->
+  @if (showDeleteModal()) {
+    <div class="modal-backdrop" (click)="cancelDeleteProfile()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <p class="section-kicker">Accion irreversible</p>
+        <h3>¿Eliminar tu cuenta?</h3>
+        <p class="modal-description">
+          Al confirmar, tu informacion personal sera eliminada del sistema.
+          Los pedidos que realizaste se conservaran en el historial de las tiendas
+          pero ya no apareceran asociados a ninguna cuenta.
+        </p>
+        <div class="modal-actions">
+          <button class="ghost-button" type="button" (click)="cancelDeleteProfile()" [disabled]="isLoading()">
+            Cancelar
+          </button>
+          <button class="danger-button" type="button" (click)="confirmDeleteProfile()" [disabled]="isLoading()">
+            Si, eliminar mi cuenta
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <header class="hero-shell customer-hero">
+    <nav class="topbar">
+      <a class="brand" routerLink="/">
+        <img class="brand-logo" src="/assets/images/localshop-logo-small.png" alt="LocalShop" />
+        <div class="brand-copy">
+          <strong>LocalShop</strong>
+          <span>Cuenta de cliente para comprar y revisar pedidos</span>
+        </div>
+      </a>
+
+      @if (currentCustomer()) {
+        <div class="topbar-links">
+          <a routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+          <a routerLink="/carrito" routerLinkActive="active-link">Carrito</a>
+        </div>
+        <div class="topbar-actions">
+          <button class="ghost-button" type="button" (click)="logout()">Cerrar sesion</button>
+        </div>
+      } @else {
+        <div class="topbar-links">
+          <a routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+          <a routerLink="/carrito" routerLinkActive="active-link">Carrito</a>
+          <a routerLink="/portal" routerLinkActive="active-link">Portal empresarial</a>
+        </div>
+      }
+    </nav>
+
+    @if (currentCustomer(); as customer) {
+      <section class="customer-hero-grid customer-hero-grid-auth">
+        <article class="customer-intro">
+          <p class="section-kicker">Sesion activa</p>
+          <h1>{{ customer.fullName }}</h1>
+          <p class="hero-description">
+            Tu cuenta esta conectada. Los pedidos que envies desde el carrito
+            quedaran guardados en tu historial personal.
+          </p>
+        </article>
+
+        <section class="customer-auth-card">
+          @if (isEditingProfile()) {
+            <form (ngSubmit)="submitEditProfile(editForm)" #editForm="ngForm" class="portal-form-card">
+              <p class="section-kicker">Editar perfil</p>
+
+              <p class="required-hint"><span class="required-mark">*</span> Todos los campos son obligatorios</p>
+              <div class="form-grid">
+                <label>
+                  Nombre completo <span class="required-mark">*</span>
+                  <input [(ngModel)]="editProfileForm.fullName" name="editFullName" required type="text"
+                    placeholder="Nombre y apellido" />
+                </label>
+
+                <label>
+                  Telefono celular <span class="required-mark">*</span>
+                  <input [(ngModel)]="editProfileForm.phone" name="editPhone" required type="tel"
+                    placeholder="3001234567" />
+                </label>
+
+                <label>
+                  Ciudad de entrega <span class="required-mark">*</span>
+                  <input [(ngModel)]="editProfileForm.city" name="editCity" required type="text"
+                    placeholder="Bogota, Medellin..." />
+                </label>
+
+                <label>
+                  Direccion de entrega <span class="required-mark">*</span>
+                  <input [(ngModel)]="editProfileForm.address" name="editAddress" required type="text"
+                    placeholder="Calle 123 # 45-67, Apto 8" />
+                </label>
+              </div>
+
+              @if (feedback(); as status) {
+                <p class="feedback admin-banner" [class.error]="status.type === 'error'">{{ status.message }}</p>
+              }
+
+              <button class="submit-button" type="submit" [disabled]="isLoading()">Guardar cambios</button>
+              <button class="ghost-button" type="button" (click)="cancelEditingProfile()" [disabled]="isLoading()"
+                style="width: 100%; margin-top: 0.5rem;">
+                Cancelar
+              </button>
+            </form>
+          } @else {
+            <div class="signed-card">
+              <p class="section-kicker">Cliente activo</p>
+              <p><strong>{{ customer.fullName }}</strong></p>
+              <p>{{ customer.email }}</p>
+              <p>{{ customer.phone }}</p>
+              <p>{{ customer.city }} &mdash; {{ customer.address }}</p>
+
+              @if (feedback(); as status) {
+                <p class="feedback admin-banner" [class.error]="status.type === 'error'">{{ status.message }}</p>
+              }
+
+              <button class="ghost-button" type="button" (click)="startEditingProfile()">
+                Editar perfil
+              </button>
+              <button class="ghost-button danger-ghost" type="button" (click)="requestDeleteProfile()">
+                Eliminar cuenta
+              </button>
+              <button class="submit-button" type="button" (click)="logout()">
+                Cerrar sesion
+              </button>
+            </div>
+          }
+        </section>
+      </section>
+
+    } @else if (currentBusiness(); as business) {
+      <section class="customer-hero-grid customer-hero-grid-auth">
+        <article class="customer-intro">
+          <p class="section-kicker">Sesion empresarial activa</p>
+          <h1>{{ business.businessName }}</h1>
+          <p class="hero-description">
+            Para usar una cuenta de comprador, primero cierra la sesion
+            empresarial desde el portal.
+          </p>
+        </article>
+
+        <section class="customer-auth-card">
+          <div class="signed-card">
+            <p class="section-kicker">Portal empresarial</p>
+            <p>{{ business.email }}</p>
+            <p>{{ business.city }} &mdash; {{ business.address }}</p>
+            <a class="submit-button" routerLink="/portal">Ir al portal empresarial</a>
+          </div>
+        </section>
+      </section>
+
+    } @else {
+      <section class="customer-hero-grid">
+        <article class="customer-intro">
+          <p class="section-kicker">Compradores</p>
+          <h1>Compra con tus datos guardados y conserva el historial de tus pedidos.</h1>
+          <p class="hero-description">
+            Registra tu cuenta para que el carrito recuerde tu informacion de entrega
+            y agrupe todas tus compras en un solo historial.
+          </p>
+
+          <div class="account-choice">
+            <a class="tab-button" routerLink="/portal">Portal empresarial</a>
+            <button class="tab-button active" type="button">Cuenta cliente</button>
+          </div>
+        </article>
+
+        <section class="customer-auth-card">
+          <div class="auth-switch account-choice">
+            <button class="tab-button" [class.active]="authMode() === 'login'" type="button"
+              (click)="authMode.set('login')">
+              Entrar como cliente
+            </button>
+            <button class="tab-button" [class.active]="authMode() === 'register'" type="button"
+              (click)="authMode.set('register')">
+              Registrar cliente
+            </button>
+          </div>
+
+          <button class="google-button" type="button" (click)="showGoogleNotice()">
+            {{ authMode() === 'register' ? 'Registrarse con Google' : 'Entrar con Google' }}
+          </button>
+
+          @if (authMode() === 'login') {
+            <form #loginNgForm="ngForm" class="portal-form-card" (ngSubmit)="submitLogin(loginNgForm)">
+              <p class="required-hint"><span class="required-mark">*</span> Todos los campos son obligatorios</p>
+              <div class="form-grid">
+                <label>
+                  Correo electronico <span class="required-mark">*</span>
+                  <input [(ngModel)]="loginForm.email" name="customerLoginEmail" required type="email"
+                    placeholder="usuario@correo.com" />
+                </label>
+
+                <label>
+                  Contrasena <span class="required-mark">*</span>
+                  <input [(ngModel)]="loginForm.password" name="customerLoginPassword" required type="password"
+                    placeholder="Tu contrasena" />
+                </label>
+              </div>
+
+              @if (feedback(); as status) {
+                <p class="feedback admin-banner" [class.error]="status.type === 'error'">{{ status.message }}</p>
+              }
+
+              <button class="submit-button" type="submit" [disabled]="isLoading()">Entrar como cliente</button>
+            </form>
+
+          } @else {
+            <form #registerNgForm="ngForm" class="portal-form-card" (ngSubmit)="submitRegister(registerNgForm)">
+              <p class="required-hint"><span class="required-mark">*</span> Los campos marcados con asterisco son obligatorios</p>
+              <div class="form-grid">
+                <label>
+                  Nombre completo <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.fullName" name="customerFullName" required type="text"
+                    placeholder="Nombre y apellido" />
+                </label>
+
+                <label>
+                  Correo electronico <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.email" name="customerEmail" required type="email"
+                    placeholder="usuario@correo.com" />
+                </label>
+
+                <label>
+                  Contrasena <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.password" name="customerPassword" required type="password"
+                    placeholder="Minimo 8 caracteres, 1 mayuscula y 1 numero" />
+                </label>
+
+                <label>
+                  Telefono celular <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.phone" name="customerPhone" required type="tel"
+                    placeholder="3001234567" />
+                </label>
+
+                <label>
+                  Ciudad de entrega <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.city" name="customerCity" required type="text"
+                    placeholder="Bogota, Medellin..." />
+                </label>
+
+                <label>
+                  Direccion de entrega <span class="required-mark">*</span>
+                  <input [(ngModel)]="registerForm.address" name="customerAddress" required type="text"
+                    placeholder="Calle 123 # 45-67, Apto 8" />
+                </label>
+              </div>
+
+              @if (feedback(); as status) {
+                <p class="feedback admin-banner" [class.error]="status.type === 'error'">{{ status.message }}</p>
+              }
+
+              <button class="submit-button" type="submit" [disabled]="isLoading()">Crear cuenta de cliente</button>
+            </form>
+          }
+        </section>
+      </section>
+    }
+  </header>
+
+  <main class="content-shell">
+    @if (currentCustomer()) {
+
+      <!-- Seccion de compras pendientes de pago -->
+      @if (pendingItems().length > 0) {
+        <section class="section-heading">
+          <div>
+            <p class="section-kicker">Pendientes</p>
+            <h2>Compras pendientes de pago</h2>
+          </div>
+          <strong>{{ pendingTotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </section>
+
+        <section class="pending-card">
+          <div class="pending-card-intro">
+            <p>
+              Estos productos estan en tu carrito listos para pagar. Puedes ir al portal de pagos
+              cuando quieras o quitar los que ya no necesites.
+            </p>
+            <div class="pending-actions">
+              <a class="submit-button" routerLink="/carrito">Ir al carrito y pagar</a>
+              <button class="ghost-button danger-ghost" type="button" (click)="clearAllPending()">
+                Vaciar pendientes
+              </button>
+            </div>
+          </div>
+
+          <div class="pending-items-list">
+            @for (item of pendingItems(); track item.productId) {
+              <div class="pending-item-row">
+                <div class="pending-item-info">
+                  <strong>{{ item.quantity }} x {{ item.name }}</strong>
+                  <span class="minimum-order-copy">{{ item.businessName }}</span>
+                  <span>{{ item.quantity * item.price | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</span>
+                </div>
+                <button class="ghost-button danger-ghost" type="button"
+                  (click)="removeFromPending(item.productId)" title="Quitar este producto">
+                  Quitar
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- Historial de compras completadas -->
+      <section class="section-heading">
+        <div>
+          <p class="section-kicker">Historial</p>
+          <h2>Compras del cliente</h2>
+        </div>
+        @if (history(); as orderHistory) {
+          <strong>{{ orderHistory.totalSpent | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+        }
+      </section>
+
+      @if (completedOrders().length) {
+        <section class="history-grid">
+          @for (order of completedOrders(); track order.orderId) {
+            <article class="history-card">
+              <div class="history-card-head">
+                <div>
+                  <p class="section-kicker">{{ order.status }}</p>
+                  <h3>{{ order.businessName }}</h3>
+                </div>
+                <strong>{{ order.total | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+              </div>
+
+              <p>{{ order.deliveryAddress }}</p>
+
+              <p class="minimum-order-copy" style="margin-top: -0.5rem; margin-bottom: 0.5rem;">
+                Pagado con: <strong>{{ order.paymentMethod }}</strong>
+              </p>
+
+              <div class="history-items">
+                @for (item of order.items; track item.productId) {
+                  <span>{{ item.quantity }} x {{ item.productName }}</span>
+                }
+              </div>
+            </article>
+          }
+        </section>
+      } @else {
+        <article class="empty-card">
+          <p class="section-kicker">Sin compras</p>
+          <h3>Aun no hay compras completadas en esta cuenta.</h3>
+          <a class="primary-action" routerLink="/">Explorar productos</a>
+        </article>
+      }
+    }
+  </main>
+</div>

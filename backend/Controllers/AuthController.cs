@@ -1,6 +1,9 @@
-using System.Data.Odbc;
 using Microsoft.AspNetCore.Mvc;
-using TiendaMicroempresas.Api.Contracts;
+using TiendaMicroempresas.Api.Contracts.Auth;
+using TiendaMicroempresas.Api.Contracts.Customers;
+using TiendaMicroempresas.Api.Contracts.Orders;
+using TiendaMicroempresas.Api.Contracts.Products;
+using TiendaMicroempresas.Api.Contracts.Store;
 using TiendaMicroempresas.Api.Repositories;
 
 namespace TiendaMicroempresas.Api.Controllers;
@@ -13,14 +16,7 @@ public sealed class AuthController(IStoreRepository repository) : ControllerBase
     [ProducesResponseType<SetupStatusResponse>(StatusCodes.Status200OK)]
     public async Task<ActionResult<SetupStatusResponse>> GetSetupStatus(CancellationToken cancellationToken)
     {
-        try
-        {
-            return Ok(new SetupStatusResponse(await repository.HasBusinessesAsync(cancellationToken)));
-        }
-        catch (OdbcException)
-        {
-            return Ok(new SetupStatusResponse(DemoStoreRuntime.HasBusinesses()));
-        }
+        return Ok(new SetupStatusResponse(await repository.HasBusinessesAsync(cancellationToken)));
     }
 
     [HttpPost("register")]
@@ -38,17 +34,6 @@ public sealed class AuthController(IStoreRepository repository) : ControllerBase
         {
             return BadRequest(new { message = exception.Message });
         }
-        catch (OdbcException)
-        {
-            try
-            {
-                return Created("/api/auth/me", DemoStoreRuntime.RegisterOwner(request));
-            }
-            catch (InvalidOperationException exception)
-            {
-                return BadRequest(new { message = exception.Message });
-            }
-        }
     }
 
     [HttpPost("login")]
@@ -64,17 +49,6 @@ public sealed class AuthController(IStoreRepository repository) : ControllerBase
         catch (InvalidOperationException exception)
         {
             return BadRequest(new { message = exception.Message });
-        }
-        catch (OdbcException)
-        {
-            try
-            {
-                return Ok(DemoStoreRuntime.LoginOwner(request));
-            }
-            catch (InvalidOperationException exception)
-            {
-                return BadRequest(new { message = exception.Message });
-            }
         }
     }
 
@@ -96,17 +70,6 @@ public sealed class AuthController(IStoreRepository repository) : ControllerBase
         catch (InvalidOperationException exception)
         {
             return Unauthorized(new { message = exception.Message });
-        }
-        catch (OdbcException)
-        {
-            try
-            {
-                return Ok(DemoStoreRuntime.GetBusinessByToken(token));
-            }
-            catch (InvalidOperationException exception)
-            {
-                return Unauthorized(new { message = exception.Message });
-            }
         }
     }
 
@@ -130,17 +93,6 @@ public sealed class AuthController(IStoreRepository repository) : ControllerBase
         {
             return Unauthorized(new { message = exception.Message });
         }
-        catch (OdbcException)
-        {
-            try
-            {
-                return Ok(DemoStoreRuntime.UpdateOwnerProfile(token, request));
-            }
-            catch (InvalidOperationException exception)
-            {
-                return Unauthorized(new { message = exception.Message });
-            }
-        }
     }
 
     [HttpPost("logout")]
@@ -163,10 +115,27 @@ public sealed class AuthController(IStoreRepository repository) : ControllerBase
         {
             return Unauthorized(new { message = exception.Message });
         }
-        catch (OdbcException)
+    }
+
+    [HttpDelete("me")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<ActionResult> DeleteMe(
+        [FromHeader(Name = "X-Owner-Token")] string? token,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(token))
         {
-            DemoStoreRuntime.Logout(token);
+            return Unauthorized(new { message = "Debes iniciar sesion." });
+        }
+
+        try
+        {
+            await repository.DeleteBusinessAsync(token, cancellationToken);
             return NoContent();
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Unauthorized(new { message = exception.Message });
         }
     }
 }

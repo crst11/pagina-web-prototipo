@@ -1,63 +1,70 @@
+/*
+ * portal-page.ts
+ *
+ * Componente del portal empresarial. Gestiona el registro e inicio de sesion
+ * de propietarios de empresas, la administracion del perfil publico, el catalogo
+ * de productos y la bandeja de pedidos entrantes.
+ *
+ * El portal es independiente de la cuenta de cliente: un mismo correo puede
+ * existir en ambas tablas pero representan roles diferentes. Este componente
+ * no expone ni gestiona funciones del carrito de compras.
+ *
+ * Nuevas funciones en esta version:
+ *   - Edicion del perfil empresarial desde la tarjeta de vista previa.
+ *   - Eliminacion de la cuenta empresarial con modal de confirmacion propio.
+ *   - Modal de confirmacion reutilizable (showDeleteModal).
+ */
+
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
-import {
-  BusinessOrdersFeed,
-  BusinessProduct,
-  LoginBusinessRequest,
-  MarketplaceBusiness,
-  RegisterBusinessRequest,
-  UpdateBusinessProfileRequest,
-  UpsertBusinessProductRequest,
-} from '../../../../core/models/store.models';
-import { CartService } from '../../../../core/services/cart.service';
-import { StoreService } from '../../../../core/services/store.service';
+import { LoginBusinessRequest, RegisterBusinessRequest, UpdateBusinessProfileRequest, UpsertBusinessProductRequest } from '../../../../core/models/auth.models';
+import { BusinessProduct, MarketplaceBusiness } from '../../../../core/models/marketplace.models';
+import { BusinessOrdersFeed } from '../../../../core/models/order.models';
+import { AuthService } from '../../../../core/services/auth.service';
+import { OrderService } from '../../../../core/services/order.service';
+import { ProductService } from '../../../../core/services/product.service';
 
 @Component({
   selector: 'app-portal-page',
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
   templateUrl: './portal-page.html',
   styleUrl: './portal-page.css',
 })
 export class PortalPage implements OnInit {
-  private readonly storeService = inject(StoreService);
-  private readonly cartService = inject(CartService);
+  private readonly authService = inject(AuthService);
+  private readonly productService = inject(ProductService);
+  private readonly orderService = inject(OrderService);
 
-  protected readonly authMode = signal<'register' | 'login'>('register');
+  protected readonly authMode = signal<'register' | 'login'>('login');
   protected readonly isLoading = signal(false);
   protected readonly currentBusiness = signal<MarketplaceBusiness | null>(null);
   protected readonly ordersFeed = signal<BusinessOrdersFeed | null>(null);
   protected readonly editingProductId = signal<number | null>(null);
+  protected readonly showDeleteModal = signal(false);
   protected readonly authFeedback = signal<{ type: 'success' | 'error'; message: string } | null>(null);
   protected readonly businessFeedback = signal<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  protected registerForm: RegisterBusinessRequest = this.createDefaultRegisterForm();
-  protected loginForm: LoginBusinessRequest = {
-    email: '',
-    password: '',
-  };
-  protected businessProfileForm: UpdateBusinessProfileRequest = this.createDefaultBusinessProfile();
-  protected productForm: UpsertBusinessProductRequest = this.createDefaultProduct();
+  protected registerForm: RegisterBusinessRequest = this.buildEmptyRegisterForm();
+  protected loginForm: LoginBusinessRequest = { email: '', password: '' };
+  protected businessProfileForm: UpdateBusinessProfileRequest = this.buildEmptyProfileForm();
+  protected productForm: UpsertBusinessProductRequest = this.buildEmptyProduct();
 
   protected readonly isAuthenticated = computed(() => !!this.currentBusiness());
   protected readonly currentBusinessProductCount = computed(() => this.currentBusiness()?.products.length ?? 0);
   protected readonly currentBusinessFeaturedCount = computed(
-    () => this.currentBusiness()?.products.filter((product) => product.isFeatured).length ?? 0,
+    () => this.currentBusiness()?.products.filter((p) => p.isFeatured).length ?? 0,
   );
   protected readonly currentBusinessPublishedCount = computed(
-    () => this.currentBusiness()?.products.filter((product) => product.isPublished).length ?? 0,
+    () => this.currentBusiness()?.products.filter((p) => p.isPublished).length ?? 0,
   );
   protected readonly newOrdersCount = computed(() => this.ordersFeed()?.newOrders ?? 0);
-  protected readonly cartCount = this.cartService.count;
   protected readonly portalHeroBackground = computed(() => {
-    const bannerUrl = this.currentBusiness()?.bannerUrl;
-    if (!bannerUrl) {
-      return null;
-    }
-
-    return `linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(237, 248, 255, 0.86)), linear-gradient(110deg, rgba(18, 48, 71, 0.14), rgba(15, 118, 110, 0.12)), url("${bannerUrl}") center / cover no-repeat`;
+    const url = this.currentBusiness()?.bannerUrl;
+    if (!url) return null;
+    return `linear-gradient(135deg, rgba(255,255,255,0.92), rgba(237,248,255,0.86)), url("${url}") center / cover no-repeat`;
   });
 
   ngOnInit(): void {
@@ -66,69 +73,65 @@ export class PortalPage implements OnInit {
 
   protected async submitRegister(form: NgForm): Promise<void> {
     if (form.invalid) {
+      this.authFeedback.set({ type: 'error', message: 'Completa todos los campos obligatorios.' });
       return;
     }
 
+    this.isLoading.set(true);
     try {
-      const business = await this.storeService.registerBusiness(this.registerForm);
+      const business = await this.authService.registerBusiness(this.registerForm);
       this.currentBusiness.set(business);
-      this.authFeedback.set({
-        type: 'success',
-        message: 'Tu perfil quedo creado y ya puedes administrar catalogo, imagenes y productos.',
-      });
+      this.authFeedback.set({ type: 'success', message: 'Empresa registrada correctamente.' });
       this.businessFeedback.set(null);
-      this.registerForm = this.createDefaultRegisterForm();
+      this.registerForm = this.buildEmptyRegisterForm();
       form.resetForm(this.registerForm);
-      this.syncFormsFromBusiness(business);
+      this.syncProfileFormFromBusiness(business);
       await this.loadOrders();
     } catch (error) {
       this.authFeedback.set({
         type: 'error',
         message: error instanceof Error ? error.message : 'No se pudo registrar la empresa.',
       });
+    } finally {
+      this.isLoading.set(false);
     }
   }
 
   protected async submitLogin(form: NgForm): Promise<void> {
     if (form.invalid) {
+      this.authFeedback.set({ type: 'error', message: 'Ingresa el correo y la contrasena.' });
       return;
     }
 
+    this.isLoading.set(true);
     try {
-      const business = await this.storeService.loginBusiness(this.loginForm);
+      const business = await this.authService.loginBusiness(this.loginForm);
       this.currentBusiness.set(business);
-      this.authFeedback.set({
-        type: 'success',
-        message: `Sesion iniciada como ${business.businessName}.`,
-      });
+      this.authFeedback.set({ type: 'success', message: `Sesion iniciada como ${business.businessName}.` });
       this.businessFeedback.set(null);
-      this.loginForm = {
-        email: '',
-        password: '',
-      };
+      this.loginForm = { email: '', password: '' };
       form.resetForm(this.loginForm);
-      this.syncFormsFromBusiness(business);
+      this.syncProfileFormFromBusiness(business);
       await this.loadOrders();
     } catch (error) {
       this.authFeedback.set({
         type: 'error',
         message: error instanceof Error ? error.message : 'No se pudo iniciar sesion.',
       });
+    } finally {
+      this.isLoading.set(false);
     }
   }
 
   protected async logout(): Promise<void> {
     try {
-      await this.storeService.logoutBusiness();
+      if (this.currentBusiness()) await this.authService.logoutBusiness();
       this.currentBusiness.set(null);
-      this.businessProfileForm = this.createDefaultBusinessProfile();
-      this.productForm = this.createDefaultProduct();
+      this.businessProfileForm = this.buildEmptyProfileForm();
+      this.productForm = this.buildEmptyProduct();
       this.ordersFeed.set(null);
       this.editingProductId.set(null);
-      this.businessFeedback.set({
-        type: 'success',
-        message: 'Sesion empresarial cerrada.',
-      });
+      this.businessFeedback.set({ type: 'success', message: 'Sesion empresarial cerrada.' });
     } catch (error) {
       this.businessFeedback.set({
         type: 'error',
@@ -138,19 +141,14 @@ export class PortalPage implements OnInit {
   }
 
   protected async saveBusinessProfile(form: NgForm): Promise<void> {
-    if (form.invalid) {
-      return;
-    }
+    if (form.invalid) return;
 
     try {
-      const business = await this.storeService.updateCurrentBusiness(this.businessProfileForm);
+      const business = await this.authService.updateCurrentBusiness(this.businessProfileForm);
       this.currentBusiness.set(business);
-      this.syncFormsFromBusiness(business);
+      this.syncProfileFormFromBusiness(business);
       await this.loadOrders();
-      this.businessFeedback.set({
-        type: 'success',
-        message: 'Tu perfil publico se actualizo correctamente.',
-      });
+      this.businessFeedback.set({ type: 'success', message: 'Perfil actualizado correctamente.' });
     } catch (error) {
       this.businessFeedback.set({
         type: 'error',
@@ -159,21 +157,46 @@ export class PortalPage implements OnInit {
     }
   }
 
-  protected async saveProduct(form: NgForm): Promise<void> {
-    if (form.invalid) {
-      return;
-    }
+  // Abre el modal de confirmacion para eliminar la cuenta empresarial.
+  protected requestDeleteBusiness(): void {
+    this.showDeleteModal.set(true);
+  }
+
+  protected cancelDeleteBusiness(): void {
+    this.showDeleteModal.set(false);
+  }
+
+  // Elimina la cuenta tras confirmar en el modal.
+  protected async confirmDeleteBusiness(): Promise<void> {
+    this.showDeleteModal.set(false);
+    this.isLoading.set(true);
 
     try {
-      const business = await this.storeService.saveProduct(this.productForm, this.editingProductId() ?? undefined);
+      await this.authService.deleteBusiness();
+      this.currentBusiness.set(null);
+      this.ordersFeed.set(null);
+      this.businessFeedback.set({ type: 'success', message: 'La cuenta empresarial fue eliminada.' });
+    } catch (error) {
+      this.businessFeedback.set({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'No fue posible eliminar la cuenta.',
+      });
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  protected async saveProduct(form: NgForm): Promise<void> {
+    if (form.invalid) return;
+
+    try {
+      const business = await this.productService.saveProduct(this.productForm, this.editingProductId() ?? undefined);
       this.currentBusiness.set(business);
-      this.syncFormsFromBusiness(business);
+      this.syncProfileFormFromBusiness(business);
       await this.loadOrders();
       this.businessFeedback.set({
         type: 'success',
-        message: this.editingProductId()
-          ? 'Producto actualizado correctamente.'
-          : 'Producto agregado al catalogo de tu empresa.',
+        message: this.editingProductId() ? 'Producto actualizado.' : 'Producto agregado al catalogo.',
       });
       this.resetProductForm(form);
     } catch (error) {
@@ -201,17 +224,12 @@ export class PortalPage implements OnInit {
 
   protected async deleteProduct(productId: number): Promise<void> {
     try {
-      const business = await this.storeService.deleteProduct(productId);
+      const business = await this.productService.deleteProduct(productId);
       this.currentBusiness.set(business);
-      this.syncFormsFromBusiness(business);
+      this.syncProfileFormFromBusiness(business);
       await this.loadOrders();
-      this.businessFeedback.set({
-        type: 'success',
-        message: 'Producto eliminado del catalogo.',
-      });
-      if (this.editingProductId() === productId) {
-        this.resetProductForm();
-      }
+      this.businessFeedback.set({ type: 'success', message: 'Producto eliminado del catalogo.' });
+      if (this.editingProductId() === productId) this.resetProductForm();
     } catch (error) {
       this.businessFeedback.set({
         type: 'error',
@@ -222,15 +240,12 @@ export class PortalPage implements OnInit {
 
   protected resetProductForm(form?: NgForm): void {
     this.editingProductId.set(null);
-    this.productForm = this.createDefaultProduct();
+    this.productForm = this.buildEmptyProduct();
     form?.resetForm(this.productForm);
   }
 
   protected initials(value?: string | null): string {
-    if (!value?.trim()) {
-      return 'LS';
-    }
-
+    if (!value?.trim()) return 'LS';
     return value
       .trim()
       .split(/\s+/)
@@ -243,11 +258,11 @@ export class PortalPage implements OnInit {
     this.isLoading.set(true);
 
     try {
-      const business = await this.storeService.getCurrentBusiness();
+      const business = await this.authService.getCurrentBusiness();
       this.currentBusiness.set(business);
 
       if (business) {
-        this.syncFormsFromBusiness(business);
+        this.syncProfileFormFromBusiness(business);
         await this.loadOrders();
       } else {
         this.ordersFeed.set(null);
@@ -259,13 +274,13 @@ export class PortalPage implements OnInit {
 
   private async loadOrders(): Promise<void> {
     try {
-      this.ordersFeed.set(await this.storeService.getCurrentBusinessOrders());
+      this.ordersFeed.set(await this.orderService.getCurrentBusinessOrders());
     } catch {
       this.ordersFeed.set(null);
     }
   }
 
-  private syncFormsFromBusiness(business: MarketplaceBusiness): void {
+  private syncProfileFormFromBusiness(business: MarketplaceBusiness): void {
     this.businessProfileForm = {
       ownerName: business.ownerName,
       businessName: business.businessName,
@@ -283,7 +298,7 @@ export class PortalPage implements OnInit {
     };
   }
 
-  private createDefaultRegisterForm(): RegisterBusinessRequest {
+  private buildEmptyRegisterForm(): RegisterBusinessRequest {
     return {
       ownerName: '',
       businessName: '',
@@ -300,7 +315,7 @@ export class PortalPage implements OnInit {
     };
   }
 
-  private createDefaultBusinessProfile(): UpdateBusinessProfileRequest {
+  private buildEmptyProfileForm(): UpdateBusinessProfileRequest {
     return {
       ownerName: '',
       businessName: '',
@@ -318,7 +333,7 @@ export class PortalPage implements OnInit {
     };
   }
 
-  private createDefaultProduct(): UpsertBusinessProductRequest {
+  private buildEmptyProduct(): UpsertBusinessProductRequest {
     return {
       name: '',
       category: '',

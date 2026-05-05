@@ -1,6 +1,9 @@
-using System.Data.Odbc;
 using Microsoft.AspNetCore.Mvc;
-using TiendaMicroempresas.Api.Contracts;
+using TiendaMicroempresas.Api.Contracts.Auth;
+using TiendaMicroempresas.Api.Contracts.Customers;
+using TiendaMicroempresas.Api.Contracts.Orders;
+using TiendaMicroempresas.Api.Contracts.Products;
+using TiendaMicroempresas.Api.Contracts.Store;
 using TiendaMicroempresas.Api.Repositories;
 
 namespace TiendaMicroempresas.Api.Controllers;
@@ -33,22 +36,6 @@ public sealed class AdminController(IStoreRepository repository) : ControllerBas
 
             return BadRequest(new { message = exception.Message });
         }
-        catch (OdbcException)
-        {
-            try
-            {
-                return Ok(DemoStoreRuntime.GetBusinessOrders(token));
-            }
-            catch (InvalidOperationException exception)
-            {
-                if (exception.Message.Contains("sesion", StringComparison.OrdinalIgnoreCase))
-                {
-                    return Unauthorized(new { message = exception.Message });
-                }
-
-                return BadRequest(new { message = exception.Message });
-            }
-        }
     }
 
     [HttpGet("catalog")]
@@ -74,22 +61,6 @@ public sealed class AdminController(IStoreRepository repository) : ControllerBas
             }
 
             return BadRequest(new { message = exception.Message });
-        }
-        catch (OdbcException)
-        {
-            try
-            {
-                return Ok(DemoStoreRuntime.GetAdminCatalog(token));
-            }
-            catch (InvalidOperationException exception)
-            {
-                if (exception.Message.Contains("sesion", StringComparison.OrdinalIgnoreCase))
-                {
-                    return Unauthorized(new { message = exception.Message });
-                }
-
-                return BadRequest(new { message = exception.Message });
-            }
         }
     }
 
@@ -119,23 +90,6 @@ public sealed class AdminController(IStoreRepository repository) : ControllerBas
 
             return BadRequest(new { message = exception.Message });
         }
-        catch (OdbcException)
-        {
-            try
-            {
-                var product = DemoStoreRuntime.CreateProduct(token, request);
-                return Created($"/api/admin/products/{product.ProductId}", product);
-            }
-            catch (InvalidOperationException exception)
-            {
-                if (exception.Message.Contains("sesion", StringComparison.OrdinalIgnoreCase))
-                {
-                    return Unauthorized(new { message = exception.Message });
-                }
-
-                return BadRequest(new { message = exception.Message });
-            }
-        }
     }
 
     [HttpPut("products/{productId:int}")]
@@ -164,22 +118,6 @@ public sealed class AdminController(IStoreRepository repository) : ControllerBas
 
             return BadRequest(new { message = exception.Message });
         }
-        catch (OdbcException)
-        {
-            try
-            {
-                return Ok(DemoStoreRuntime.UpdateProduct(token, productId, request));
-            }
-            catch (InvalidOperationException exception)
-            {
-                if (exception.Message.Contains("sesion", StringComparison.OrdinalIgnoreCase))
-                {
-                    return Unauthorized(new { message = exception.Message });
-                }
-
-                return BadRequest(new { message = exception.Message });
-            }
-        }
     }
 
     [HttpDelete("products/{productId:int}")]
@@ -207,23 +145,6 @@ public sealed class AdminController(IStoreRepository repository) : ControllerBas
             }
 
             return new BadRequestObjectResult(new { message = exception.Message });
-        }
-        catch (OdbcException)
-        {
-            try
-            {
-                DemoStoreRuntime.DeleteProduct(token, productId);
-                return NoContent();
-            }
-            catch (InvalidOperationException exception)
-            {
-                if (exception.Message.Contains("sesion", StringComparison.OrdinalIgnoreCase))
-                {
-                    return Unauthorized(new { message = exception.Message });
-                }
-
-                return BadRequest(new { message = exception.Message });
-            }
         }
     }
 }
