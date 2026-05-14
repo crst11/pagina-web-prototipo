@@ -245,6 +245,11 @@
       <strong>Carrito actualizado</strong>
       <span>{{ notice }}</span>
     </div>
-    <button class="cart-toast-action" type="button" (click)="refreshMarketplace()">Actualizar vista</button>
+    <div class="cart-toast-actions">
+      @if (canUndoLastRemoval()) {
+        <button class="cart-toast-action" type="button" (click)="undoLastRemoval()">Deshacer</button>
+      }
+      <button class="cart-toast-action" type="button" (click)="refreshMarketplace()">Actualizar vista</button>
+    </div>
   </div>
 }

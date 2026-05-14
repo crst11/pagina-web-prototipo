@@ -65,44 +65,11 @@ export class PaymentPage implements OnInit {
       return;
     }
 
-    const shipment = this.pendingShipment();
-    if (!shipment) {
-      this.pageFeedback.set({ type: 'error', message: 'No se encontraron los datos de envio. Vuelve al carrito.' });
-      return;
-    }
-
-    if (!this.customerService.hasCustomerSession()) {
-      this.pageFeedback.set({
-        type: 'error',
-        message: 'Debes registrarte o iniciar sesion como cliente para completar la compra.',
-      });
-      void this.router.navigate(['/cliente']);
-      return;
-    }
-
-    this.isLoading.set(true);
-
-    try {
-      const response = await this.orderService.checkoutCart({
-        ...shipment,
-        paymentMethod: this.paymentMethod(),
-        items: this.currentCartItems().map((item) => ({
-          businessId: item.businessId,
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
-      });
-
-      this.cartService.clear();
-      this.pageFeedback.set({ type: 'success', message: response.message });
-      void this.router.navigate(['/cliente']);
-    } catch (error) {
-      this.pageFeedback.set({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'No fue posible completar la compra.',
-      });
-    } finally {
-      this.isLoading.set(false);
-    }
+    // Bloquear pagos completamente - No está habilitada la API de pagos
+    this.pageFeedback.set({
+      type: 'error',
+      message: 'Aún no está habilitado el sistema de pagos. La API de pagos no ha sido conectada.',
+    });
+    return;
   }
 }

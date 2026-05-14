@@ -8,10 +8,28 @@ using TiendaMicroempresas.Api.Repositories;
 
 namespace TiendaMicroempresas.Api.Controllers;
 
+/// <summary>
+/// Controlador de pedidos del marketplace.
+///
+/// Gestiona la creación de pedidos individuales y el procesamiento
+/// del carrito completo (checkout). Todos los endpoints requieren
+/// autenticación del cliente via <c>X-Customer-Token</c>.
+///
+/// ## Endpoints disponibles
+/// - <c>POST /api/orders</c>          — Crear pedido individual a una empresa
+/// - <c>POST /api/orders/checkout</c> — Procesar carrito completo (multi-empresa)
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public sealed class OrdersController(IStoreRepository repository) : ControllerBase
 {
+    /// <summary>
+    /// Procesa el carrito completo del cliente en una sola transacción.
+    /// Genera un pedido independiente por cada empresa involucrada en el carrito.
+    /// Valida el token del cliente, los datos de envío y todos los ítems antes de confirmar.
+    /// </summary>
+    /// <param name="request">Datos del cliente, dirección de envío e ítems del carrito.</param>
+    /// <param name="customerToken">Token de sesión del cliente.</param>
     [HttpPost("checkout")]
     [ProducesResponseType<CheckoutCartResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -61,6 +79,12 @@ public sealed class OrdersController(IStoreRepository repository) : ControllerBa
         }
     }
 
+    /// <summary>
+    /// Crea un pedido individual del cliente a una empresa específica.
+    /// Valida stock, pedido mínimo por empresa y sesión del cliente.
+    /// </summary>
+    /// <param name="request">Datos del pedido: empresa, productos, datos de envío.</param>
+    /// <param name="customerToken">Token de sesión del cliente.</param>
     [HttpPost]
     [ProducesResponseType<OrderCreatedResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

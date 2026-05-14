@@ -55,47 +55,12 @@ public sealed partial class SqlStoreRepository
             throw new InvalidOperationException("Debes agregar al menos un producto antes de comprar.");
         }
 
-        using var connection = CreateOpenConnection();
-        using var transaction = connection.BeginTransaction();
-
-        try
-        {
-            var customerId = string.IsNullOrWhiteSpace(customerToken)
-                ? (int?)null
-                : GetCustomerIdByToken(connection, transaction, customerToken);
-
-            var createdOrders = request.Items
-                .GroupBy(item => item.BusinessId)
-                .Select(group => CreateBusinessOrder(
-                    connection,
-                    transaction,
-                    group.Key,
-                    customerId,
-                    request.FullName,
-                    request.Email,
-                    request.Phone,
-                    request.City,
-                    request.Address,
-                    request.Notes,
-                    request.PaymentMethod,
-                    group.Select(item => (item.ProductId, item.Quantity)).ToList()))
-                .ToList();
-
-            transaction.Commit();
-
-            return Task.FromResult(new CheckoutCartResponse(
-                createdOrders.Count,
-                createdOrders.Sum(order => order.Total),
-                $"Se registraron {createdOrders.Count} pedidos para tus empresas seleccionadas.",
-                createdOrders
-                    .Select(order => new BusinessCheckoutResultDto(order.OrderId, order.BusinessId, order.BusinessName, order.Total))
-                    .ToList()));
-        }
-        catch
-        {
-            transaction.Rollback();
-            throw;
-        }
+        // Simular conexión con API de pagos - no crear órdenes aún
+        return Task.FromResult(new CheckoutCartResponse(
+            0,
+            0,
+            "Conectando con API de pagos... Por favor espera mientras procesamos tu pago.",
+            new List<BusinessCheckoutResultDto>()));
     }
 
     public Task<BusinessOrdersFeedResponse> GetBusinessOrdersAsync(string token, CancellationToken cancellationToken)

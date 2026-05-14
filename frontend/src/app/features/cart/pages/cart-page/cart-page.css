@@ -80,6 +80,13 @@
   align-items: center;
 }
 
+.cart-toast-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 @media (max-width: 1120px) {
   .cart-hero-grid,
   .cart-layout,

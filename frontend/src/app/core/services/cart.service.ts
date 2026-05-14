@@ -31,6 +31,8 @@ import { Injectable, computed, effect, signal } from '@angular/core';
 
 import { CartItem, ShipmentCustomer } from '../models/cart.models';
 import { BusinessProduct } from '../models/marketplace.models';
+import { Queue } from '../structures/queue';
+import { Stack } from '../structures/stack';
 
 const GUEST_CART_KEY = 'localshop_guest_cart';
 const SHIPMENT_STORAGE_KEY = 'localshop_pending_shipment';
@@ -46,10 +48,15 @@ function buildAccountCartKey(token: string): string {
 export class CartService {
   private noticeTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private pulseTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private isShowingNotice = false;
+  private readonly noticeQueue = new Queue<string>();
+  private readonly removedItemsStack = new Stack<CartItem>();
 
   readonly items = signal<CartItem[]>(this.loadItemsOnStartup());
   readonly notice = signal<string | null>(null);
   readonly isPulsing = signal(false);
+  readonly undoStackSize = signal(0);
+  readonly canUndoLastRemoval = computed(() => this.undoStackSize() > 0);
   readonly pendingShipment = signal<ShipmentCustomer | null>(this.loadShipmentFromStorage());
   readonly count = computed(() => this.items().reduce((total, item) => total + item.quantity, 0));
   readonly total = computed(() => this.items().reduce((total, item) => total + item.quantity * item.price, 0));
@@ -97,8 +104,8 @@ export class CartService {
    */
   unbindFromSession(): void {
     this.items.set([]);
-    this.notice.set(null);
-    this.isPulsing.set(false);
+    this.resetNotices();
+    this.clearRemovedItemsStack();
     this.pendingShipment.set(null);
     this.clearGuestCart();
   }
@@ -143,18 +150,49 @@ export class CartService {
   }
 
   removeFromCart(productId: number): void {
+    const itemToRemove = this.items().find((item) => item.productId === productId);
+    if (!itemToRemove) return;
+
+    this.removedItemsStack.push(itemToRemove);
+    this.syncUndoStackSize();
     this.items.update((items) => items.filter((item) => item.productId !== productId));
+    this.showNotice(`"${itemToRemove.name}" se quito del carrito. Puedes deshacer esta accion.`);
+  }
+
+  undoLastRemoval(): void {
+    const restoredItem = this.removedItemsStack.pop();
+    if (!restoredItem) return;
+
+    this.syncUndoStackSize();
+    this.items.update((items) => {
+      const existing = items.find((item) => item.productId === restoredItem.productId);
+      if (!existing) {
+        return [...items, restoredItem];
+      }
+
+      return items.map((item) =>
+        item.productId === restoredItem.productId
+          ? { ...item, quantity: Math.min(item.quantity + restoredItem.quantity, item.stock) }
+          : item,
+      );
+    });
+    this.showNotice(`"${restoredItem.name}" volvio al carrito.`);
   }
 
   clearBusiness(businessId: number): void {
+    const removedItems = this.items().filter((item) => item.businessId === businessId);
+    for (const item of removedItems) {
+      this.removedItemsStack.push(item);
+    }
+    this.syncUndoStackSize();
     this.items.update((items) => items.filter((item) => item.businessId !== businessId));
   }
 
   // Vacia el carrito completamente (usado tras un pago exitoso).
   clear(): void {
     this.items.set([]);
-    this.notice.set(null);
-    this.isPulsing.set(false);
+    this.resetNotices();
+    this.clearRemovedItemsStack();
     this.pendingShipment.set(null);
     this.clearGuestCart();
     const token = this.readCustomerToken();
@@ -264,6 +302,17 @@ export class CartService {
   }
 
   private showNotice(message: string): void {
+    this.noticeQueue.enqueue(message);
+    this.showNextNotice();
+  }
+
+  private showNextNotice(): void {
+    if (this.isShowingNotice) return;
+
+    const message = this.noticeQueue.dequeue();
+    if (!message) return;
+
+    this.isShowingNotice = true;
     this.notice.set(message);
     this.isPulsing.set(true);
 
@@ -272,12 +321,34 @@ export class CartService {
 
     this.noticeTimeoutId = setTimeout(() => {
       this.notice.set(null);
+      this.isShowingNotice = false;
       this.noticeTimeoutId = null;
+      this.showNextNotice();
     }, 2800);
 
     this.pulseTimeoutId = setTimeout(() => {
       this.isPulsing.set(false);
       this.pulseTimeoutId = null;
     }, 700);
+  }
+
+  private resetNotices(): void {
+    if (this.noticeTimeoutId) clearTimeout(this.noticeTimeoutId);
+    if (this.pulseTimeoutId) clearTimeout(this.pulseTimeoutId);
+    this.noticeTimeoutId = null;
+    this.pulseTimeoutId = null;
+    this.isShowingNotice = false;
+    this.noticeQueue.clear();
+    this.notice.set(null);
+    this.isPulsing.set(false);
+  }
+
+  private clearRemovedItemsStack(): void {
+    this.removedItemsStack.clear();
+    this.syncUndoStackSize();
+  }
+
+  private syncUndoStackSize(): void {
+    this.undoStackSize.set(this.removedItemsStack.size);
   }
 }

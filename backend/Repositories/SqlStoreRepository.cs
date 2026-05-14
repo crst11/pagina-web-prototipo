@@ -11,19 +11,50 @@ using TiendaMicroempresas.Api.Contracts.Store;
 
 namespace TiendaMicroempresas.Api.Repositories;
 
-// Clase principal del repositorio. Define el campo de conexion y los tipos
-// de apoyo internos (builders y records). Los metodos publicos e implementaciones
-// de consulta viven en archivos parciales separados por dominio.
+/// <summary>
+/// Repositorio principal de LocalShop — implementación SQL Server via ODBC.
+///
+/// Esta clase parcial (<c>partial</c>) está dividida en varios archivos
+/// por dominio para facilitar el mantenimiento:
+/// <list type="bullet">
+///   <item><c>SqlStoreRepository.cs</c>       — Declaración, campo de conexión y tipos internos</item>
+///   <item><c>SqlStoreRepository.Auth.cs</c>      — Autenticación y perfil empresarial</item>
+///   <item><c>SqlStoreRepository.Customers.cs</c> — Autenticación y perfil de clientes</item>
+///   <item><c>SqlStoreRepository.Orders.cs</c>    — Creación y checkout de pedidos</item>
+///   <item><c>SqlStoreRepository.Products.cs</c>  — Gestión del catálogo de productos</item>
+///   <item><c>SqlStoreRepository.Queries.cs</c>   — Consultas del marketplace y admin</item>
+///   <item><c>SqlStoreRepository.Helpers.cs</c>   — Utilidades: conexión, hash, slugs, validaciones</item>
+/// </list>
+///
+/// ## Patrón de acceso a datos
+/// Usa ODBC directamente (sin ORM) para mayor control y rendimiento.
+/// Todas las operaciones de escritura se ejecutan dentro de transacciones.
+/// </summary>
 public sealed partial class SqlStoreRepository(IConfiguration configuration) : IStoreRepository
 {
+    /// <summary>Cadena de conexión ODBC hacia SQL Server, leída de <c>appsettings.json</c>.</summary>
     private readonly string _connectionString = configuration.GetConnectionString("SqlServer")
         ?? throw new InvalidOperationException("No se encontro la cadena de conexion SqlServer.");
 
+    // ─── URLs predeterminadas para imágenes ───────────────────────────────────
+    // Usadas cuando el usuario no sube imágenes personalizadas.
+
+    /// <summary>URL del logo predeterminado para empresas sin imagen propia.</summary>
     private static string DefaultLogoUrl => "/assets/images/store1.png";
+
+    /// <summary>URL del banner predeterminado para empresas sin banner propio.</summary>
     private static string DefaultBannerUrl => "/assets/images/banner-localshop-default.jpg";
+
+    /// <summary>URL de imagen predeterminada para productos sin imagen propia.</summary>
     private static string DefaultProductImageUrl => "/assets/images/pla1.png";
 
-    // Datos de un producto leidos durante la validacion de un pedido.
+
+    // ─── Tipos internos: records de datos leídos de la BD ─────────────────────
+
+    /// <summary>
+    /// Datos de un producto leídos durante la validación de un pedido.
+    /// Se consulta antes de confirmar la compra para verificar precio, stock y pedido mínimo.
+    /// </summary>
     private sealed record ProductOrderData(
         int ProductId,
         string Name,
@@ -31,19 +62,35 @@ public sealed partial class SqlStoreRepository(IConfiguration configuration) : I
         int MinimumOrder,
         int Stock);
 
-    // Resultado de la creacion de un pedido dentro de una transaccion.
+
+    /// <summary>
+    /// Resultado de la creación de un pedido dentro de una transacción.
+    /// Contiene los datos mínimos para construir la respuesta al cliente.
+    /// </summary>
     private sealed record CreatedOrderResult(
         int OrderId,
         int BusinessId,
         string BusinessName,
         decimal Total);
 
-    // Politica de pedido minimo de una empresa, leida antes de confirmar el checkout.
+
+    /// <summary>
+    /// Política de pedido mínimo de una empresa, leída antes de confirmar el checkout.
+    /// Permite verificar que el subtotal del carrito supere el mínimo antes de crear el pedido.
+    /// </summary>
     private sealed record BusinessOrderPolicy(
         string BusinessName,
         decimal MinimumOrderAmount);
 
-    // Acumula los campos de un pedido de empresa mientras se leen las filas del reader.
+
+    // ─── Builders: acumuladores de filas del DataReader ───────────────────────
+    // Los JOINs retornan múltiples filas por pedido (una por ítem).
+    // Los builders acumulan esas filas y construyen el DTO final.
+
+    /// <summary>
+    /// Acumula los campos de un pedido de empresa mientras se leen las filas del reader.
+    /// Construye un <see cref="BusinessOrderDto"/> al finalizar la lectura.
+    /// </summary>
     private sealed class BusinessOrderBuilder(
         int orderId,
         string customerFullName,

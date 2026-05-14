@@ -17,6 +17,7 @@ Aplicacion web para que cualquier empresario registre su empresa, inicie sesion 
 - `database/sqlserver/init.sql`: script que reconstruye la base completa y carga las 3 empresas demo.
 - `docs/ARQUITECTURA.md`: guia rapida para revisar responsabilidades, flujos y archivos clave.
 - `docs/MODULOS.md`: mapa de modulos para ubicar login, empresas, vitrina/productos y carrito.
+- `docs/MVC_PILAS_COLAS.md`: explicacion del modelo MVC del proyecto y uso de pilas/colas.
 
 ## Modulos principales del frontend
 

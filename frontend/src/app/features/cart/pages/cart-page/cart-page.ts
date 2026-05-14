@@ -41,6 +41,7 @@ export class CartPage implements OnInit {
   protected readonly cartTotal = this.cartService.total;
   protected readonly cartNotice = this.cartService.notice;
   protected readonly cartPulse = this.cartService.isPulsing;
+  protected readonly canUndoLastRemoval = this.cartService.canUndoLastRemoval;
   protected readonly cartGroups = computed<CartBusinessGroup[]>(() => {
     const businesses = this.marketplace()?.businesses ?? [];
     const grouped = new Map<number, CartBusinessGroup>();
@@ -113,6 +114,11 @@ export class CartPage implements OnInit {
   protected removeFromCart(productId: number): void {
     this.orderFeedback.set(null);
     this.cartService.removeFromCart(productId);
+  }
+
+  protected undoLastRemoval(): void {
+    this.orderFeedback.set(null);
+    this.cartService.undoLastRemoval();
   }
 
   protected async submitShipment(form: NgForm): Promise<void> {
