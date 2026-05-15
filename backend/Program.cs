@@ -1,39 +1,18 @@
-// ═══════════════════════════════════════════════════════════════════════════
-// LocalShop API — Punto de entrada de la aplicación
-//
-// Configura y arranca el servidor web ASP.NET Core con los servicios
-// necesarios para la plataforma LocalShop.
-//
-// Arquitectura:
-//   ┌─────────────────────────────────────────────────────┐
-//   │  Controllers  →  IStoreRepository  →  SQL Server    │
-//   │  (MVC: Vista) →  (Modelo/Repo)    →  (Datos)        │
-//   └─────────────────────────────────────────────────────┘
-//
-// Flujo de una solicitud HTTP:
-//   Angular Frontend → CORS Policy "frontend" → Controller → Repository → BD
-// ═══════════════════════════════════════════════════════════════════════════
+
 
 using TiendaMicroempresas.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Registro de servicios ──────────────────────────────────────────────────
-// Los servicios se agrupan en métodos de extensión para mantener este archivo
-// limpio y facilitar la lectura y el mantenimiento.
-builder.Services.AddLocalShopCors(builder.Configuration);   // Política CORS para Angular
-builder.Services.AddLocalShopServices();                    // Controllers + Repositorio
+builder.Services.AddLocalShopCors(builder.Configuration);
+builder.Services.AddLocalShopServices();
 
 var app = builder.Build();
 
-// ── Middleware ─────────────────────────────────────────────────────────────
-app.UseCors("frontend");   // Permite solicitudes del frontend Angular
+app.UseCors("frontend");
 
-// ── Endpoints de diagnóstico ───────────────────────────────────────────────
-// Endpoint de health check: confirma que la API está en línea.
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "LocalShop API" }));
 
-// Endpoint raíz: documenta los endpoints disponibles en la API.
 app.MapGet("/", () => Results.Ok(new
 {
     api = "LocalShop API",
@@ -55,7 +34,6 @@ app.MapGet("/", () => Results.Ok(new
     }
 }));
 
-// ── Controladores MVC ──────────────────────────────────────────────────────
 app.MapControllers();
 
 app.Run();

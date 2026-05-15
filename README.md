@@ -1,199 +1,85 @@
-# Marketplace Multiempresa
+# PaginaWebLocalShop - Marketplace Multiempresa (B2B)
 
-Aplicacion web para que cualquier empresario registre su empresa, inicie sesion cuando lo necesite, actualice su perfil publico y publique productos en una vitrina compartida.
+Aplicación web profesional (Marketplace) diseñada para conectar microempresas con compradores corporativos. Permite que cualquier empresario registre su empresa, gestione su catálogo de productos y reciba pedidos en un entorno multiempresa unificado.
 
-## Que hace el proyecto
+## 🏗️ Arquitectura del Proyecto (Patrón MVC)
 
-- Permite registrar multiples empresas con credenciales independientes.
-- Guarda los perfiles empresariales y productos en SQL Server.
-- Mantiene sesion por token para que cada empresario edite solo su propio catalogo.
-- Muestra un marketplace publico con 3 empresas demo profesionales y 9 productos iniciales.
-- Permite crear pedidos sin que el comprador tenga que registrarse.
+El proyecto está diseñado bajo una arquitectura limpia utilizando el patrón **Modelo-Vista-Controlador (MVC)**, aplicado y adaptado tanto en el backend como en el frontend para garantizar escalabilidad, separación de responsabilidades y facilidad de mantenimiento.
 
-## Estructura del repositorio
+### Backend (.NET 8)
 
-- `frontend/`: Angular 21 con la vitrina publica y el portal empresarial.
-- `backend/`: ASP.NET Core Web API con autenticacion, productos, pedidos y persistencia SQL Server.
-- `database/sqlserver/init.sql`: script que reconstruye la base completa y carga las 3 empresas demo.
-- `docs/ARQUITECTURA.md`: guia rapida para revisar responsabilidades, flujos y archivos clave.
-- `docs/MODULOS.md`: mapa de modulos para ubicar login, empresas, vitrina/productos y carrito.
-- `docs/MVC_PILAS_COLAS.md`: explicacion del modelo MVC del proyecto y uso de pilas/colas.
+| Capa MVC | Implementación en el Proyecto | Responsabilidad |
+|---|---|---|
+| **Modelo** | `Repositories/IStoreRepository.cs` y `SqlStoreRepository.*.cs` | Encapsula el acceso a datos. Define y ejecuta todas las operaciones directas contra SQL Server usando ODBC para máximo rendimiento. Las transacciones y la validación de integridad referencial ocurren aquí. |
+| **Vista** | Contratos (`Contracts/`) como DTOs y Requests | Representan las estructuras de datos exactas que la API expone o recibe. Son los objetos inmutables que viajan por HTTP (JSON) definiendo cómo se "ven" los datos para el cliente. |
+| **Controlador** | `Controllers/*.cs` (ej: `AuthController`, `OrdersController`) | Reciben las solicitudes HTTP, validan los datos básicos de entrada, autorizan mediante tokens y delegan la lógica pura al Repositorio. No contienen reglas de acceso a datos. |
 
-## Modulos principales del frontend
+### Frontend (Angular 17)
 
-- `frontend/src/app/features/auth`: inicio de sesion, registro y portal empresarial.
-- `frontend/src/app/features/businesses`: perfiles publicos de empresas.
-- `frontend/src/app/features/marketplace`: vitrina publica y productos.
-- `frontend/src/app/features/cart`: carrito y checkout multiempresa.
-- `frontend/src/app/core`: modelos y servicios compartidos.
-- `frontend/src/app/shared`: estilos compartidos.
+| Capa MVC | Implementación en el Proyecto | Responsabilidad |
+|---|---|---|
+| **Modelo** | `core/models/*.ts` y `core/services/*.ts` | Definen las interfaces TypeScript (tipado fuerte) y los servicios Angular (`Injectables`) que gestionan la comunicación HTTP con el backend y el estado global (ej. sesión en `localStorage`). |
+| **Vista** | `*.html` y `*.css` de cada componente | Las plantillas HTML dinámicas que renderizan los datos al usuario. Utilizan un diseño modular basado en "features" (carrito, auth, catálogo). |
+| **Controlador** | `*.ts` de cada componente (Clases TypeScript) | Interceptan los eventos del usuario (clics, envíos de formulario), llaman a los servicios (Modelo) y actualizan las propiedades enlazadas a la Vista. |
 
-## Cuentas demo
+---
 
-Clave para todas: `Empresa2026!`
+## 🧠 Estructuras de Datos Aplicadas
 
-- `contacto@andespack.co` -> Andes Pack Studio
-- `direccion@auracafe.co` -> Aura Cafe Ejecutivo
-- `comercial@lumenverde.co` -> Lumen Verde Bienestar
+Para resolver problemas específicos de lógica de negocio y mejorar la experiencia del usuario, el frontend implementa estructuras de datos clásicas:
 
-## Empresas demo sembradas
+1. **Pila (Stack) - LIFO (Last-In, First-Out)**
+   - **Ubicación:** `frontend/src/app/core/structures/stack.ts`
+   - **Uso:** Implementada para registrar el historial de acciones del usuario en el carrito de compras (agregar producto, eliminar producto, cambiar cantidades). Permite la funcionalidad de "Deshacer" (Undo) revirtiendo el estado al paso inmediatamente anterior.
 
-### Andes Pack Studio
-- Ciudad: Medellin
-- Direccion: Cra. 43A #18 Sur-135, El Poblado, Medellin
-- Enfoque: empaques corporativos reutilizables y presentacion de marca
+2. **Cola (Queue) - FIFO (First-In, First-Out)**
+   - **Ubicación:** `frontend/src/app/core/structures/queue.ts`
+   - **Uso:** Implementada para gestionar el sistema de notificaciones en pantalla (Toasts/Alerts). Garantiza que los mensajes de error o éxito se procesen y muestren al usuario en el orden exacto en que ocurrieron.
 
-### Aura Cafe Ejecutivo
-- Ciudad: Bogota
-- Direccion: Calle 85 #12-36, Chapinero, Bogota
-- Enfoque: coffee breaks, desayunos y hospitalidad ejecutiva
+---
 
-### Lumen Verde Bienestar
-- Ciudad: Cali
-- Direccion: Avenida 6N #28N-45, Granada, Cali
-- Enfoque: bienestar corporativo, fruta fresca y alimentacion saludable
+## 🚀 Características Principales
 
-## Flujo recomendado para correrlo
+- **Multiempresa (Tenancy):** Registro de múltiples empresas con sesiones, productos y credenciales independientes.
+- **Carrito y Checkout Global:** El cliente puede agregar productos de diferentes empresas en un solo carrito; el sistema genera pedidos individuales (split-orders) automáticamente en el backend.
+- **Seguridad:** Autenticación por Tokens (`X-Owner-Token` y `X-Customer-Token`). Hasheo de contraseñas con `PBKDF2` y `salt` criptográfico en SQL Server.
+- **Borrado Lógico (Soft Bench):** Los productos pueden archivarse para mantener intacto el historial de facturación y pedidos de la empresa.
 
-### Opcion recomendada: Docker
+---
 
-Este modo evita problemas de versiones locales, rutas `Path/PATH`, SQL Server instalado en Windows o configuraciones ODBC del equipo.
+## 🛠️ Stack Tecnológico
 
-```powershell
-docker compose up --build
+- **Frontend:** Angular 17, TypeScript, CSS3 puro (sin frameworks externos para máximo control), Nginx (Proxy Reverso y Servidor SPA).
+- **Backend:** C#, .NET 8 (ASP.NET Core Web API).
+- **Base de Datos:** SQL Server 2022. Acceso a datos de alto rendimiento mediante ADO.NET (ODBC).
+- **Infraestructura:** Docker y Docker Compose para orquestación del entorno de desarrollo.
+
+---
+
+## ⚙️ Guía de Ejecución Rápida (Docker)
+
+La forma recomendada de ejecutar el proyecto es mediante Docker Compose, lo cual despliega la base de datos (con datos y empresas de prueba), el backend y el frontend automáticamente.
+
+1. Asegúrate de tener Docker Desktop iniciado.
+2. Abre una terminal en la raíz del proyecto y ejecuta:
+
+```bash
+docker compose up --build -d
 ```
 
-Si `4200` ya esta ocupado por otro proyecto, usa otro puerto sin tocar el codigo:
+3. El proyecto estará disponible en:
+   - **Frontend (Marketplace):** [http://localhost:4200](http://localhost:4200)
+   - **Backend (API Base URL):** [http://localhost:5057](http://localhost:5057)
+   - **Swagger / Health Check:** [http://localhost:5057/health](http://localhost:5057/health)
 
-```powershell
-$env:FRONTEND_PORT=4201
-docker compose up --build
-```
+*(Nota: El script inicial de Docker crea automáticamente la base de datos e inserta 3 empresas de prueba funcionales).*
 
-Servicios:
+---
 
-- Frontend: [http://localhost:4200](http://localhost:4200)
-- Backend: [http://localhost:5057](http://localhost:5057)
-- Health backend: [http://localhost:5057/health](http://localhost:5057/health)
-- SQL Server Docker: `localhost,14333`
+## 🧪 Datos de Prueba Incluidos
 
-Credenciales SQL Server del contenedor:
+Puedes iniciar sesión en el portal empresarial con cualquiera de las siguientes cuentas pre-configuradas (La contraseña para todas es `Empresa2026!`):
 
-- Usuario: `sa`
-- Clave: `LocalShop2026!Docker`
-
-Para cambiar clave o puertos, copia `.env.example` a `.env` y ajusta `MSSQL_SA_PASSWORD`, `FRONTEND_PORT`, `BACKEND_PORT` o `MSSQL_HOST_PORT`.
-
-El script `database/sqlserver/docker-init.sql` crea la base, aplica cambios faltantes y carga datos demo solo si la base esta vacia.
-
-### Opcion local sin Docker
-
-1. Inicializa la base:
-
-```powershell
-sqlcmd -S localhost -E -i database\sqlserver\init.sql
-```
-
-Si `sqlcmd` falla por configuracion local, puedes ejecutar el mismo script con PowerShell usando `SqlClient` o `Invoke-Sqlcmd`.
-
-Si ya tienes datos y no quieres recrear la base, aplica la migracion no destructiva:
-
-```powershell
-sqlcmd -S localhost -E -i database\sqlserver\migrations\2026-05-03-add-product-archive.sql
-```
-
-2. Inicia el backend:
-
-```powershell
-cd backend
-dotnet run --launch-profile http
-```
-
-3. Inicia el frontend:
-
-```powershell
-cd frontend
-npm start -- --host 0.0.0.0 --port 4200
-```
-
-## URLs principales
-
-- Frontend: [http://localhost:4200](http://localhost:4200)
-- Marketplace API: [http://localhost:5057/api/store/overview](http://localhost:5057/api/store/overview)
-- Login: `POST http://localhost:5057/api/auth/login`
-- Registro: `POST http://localhost:5057/api/auth/register`
-
-## Endpoints clave
-
-### Publicos
-
-- `GET /api/store/overview`: devuelve empresas, productos destacados, categorias y totales.
-- `POST /api/orders`: crea un pedido para una empresa especifica.
-
-### Empresariales
-
-- `POST /api/auth/register`: crea una nueva empresa y abre sesion.
-- `POST /api/auth/login`: inicia sesion.
-- `GET /api/auth/me`: devuelve el perfil completo de la empresa autenticada.
-- `PUT /api/auth/me`: actualiza el perfil de la empresa autenticada.
-- `POST /api/auth/logout`: cierra sesion.
-- `GET /api/admin/catalog`: devuelve el perfil autenticado y sus categorias activas.
-- `POST /api/admin/products`: crea producto.
-- `PUT /api/admin/products/{productId}`: actualiza producto.
-- `DELETE /api/admin/products/{productId}`: elimina producto.
-
-## Verificacion realizada
-
-Se verifico manualmente:
-
-- Carga del marketplace desde `GET /api/store/overview`.
-- Registro de una empresa temporal.
-- Inicio de sesion con empresa demo.
-- Lectura y actualizacion de perfil autenticado.
-- Creacion y eliminacion de un producto desde la API privada.
-- Creacion de un pedido.
-- Restauracion final de la base con solo las 3 empresas demo.
-- Compilacion de `backend` y `frontend`.
-
-## Notas tecnicas
-
-- El frontend ya no usa `localStorage` para guardar empresas ni productos; solo conserva el token de sesion.
-- La sesion empresarial se manda al backend mediante el header `X-Owner-Token`.
-- El script `database/sqlserver/init.sql` borra y recrea la estructura para dejar siempre el entorno limpio.
-- El script `database/sqlserver/docker-init.sql` es idempotente y esta pensado para Docker.
-- Las imagenes de ejemplo viven en `frontend/public/assets/images`.
-- El borrado de productos en el backend es logico (`IsArchived`) para no dañar pedidos ya creados.
-- El frontend consume `/api`; en Docker lo resuelve Nginx y en desarrollo local lo resuelve `frontend/proxy.conf.json`.
-
-## Estructura
-
-```text
-PaginaWeb/
-|-- backend/
-|   |-- Contracts/          # DTOs y contratos HTTP de la API
-|   |-- Controllers/        # Endpoints de auth, vitrina, pedidos y administracion
-|   |-- Repositories/       # Acceso a datos SQL Server y runtime demo
-|   |-- Dockerfile          # Imagen del backend ASP.NET Core
-|   |-- Program.cs          # Configuracion de servicios, CORS, controladores y healthcheck
-|   `-- appsettings*.json   # Configuracion local y de desarrollo
-|-- database/
-|   `-- sqlserver/
-|       |-- init.sql        # Script completo para recrear la base local
-|       |-- docker-init.sql # Script idempotente usado por Docker
-|       `-- migrations/     # Cambios no destructivos de esquema
-|-- docs/
-|   |-- ARQUITECTURA.md     # Explicacion de capas, flujos y archivos clave
-|   |-- MODULOS.md          # Mapa de modulos funcionales
-|   |-- ENTREGA.md          # Este resumen de entrega
-|   `-- screenshots/        # Capturas reales del sistema
-|-- frontend/
-|   |-- public/assets/      # Imagenes y recursos estaticos
-|   |-- src/app/core/       # Modelos y servicios compartidos
-|   |-- src/app/features/   # Modulos: auth, empresas, vitrina y carrito
-|   |-- src/app/layout/     # Shell principal de navegacion
-|   |-- Dockerfile          # Imagen del frontend Angular
-|   |-- nginx.conf          # Servidor SPA y proxy hacia backend
-|   `-- proxy.conf.json     # Proxy para desarrollo local
-|-- docker-compose.yml      # Orquesta SQL Server, inicializador DB, backend y frontend
-|-- .env.example            # Variables de puertos y clave SQL Server
-`-- README.md               # Instrucciones principales del proyecto
+- **Andes Pack Studio:** `contacto@andespack.co`
+- **Aura Café Ejecutivo:** `direccion@auracafe.co`
+- **Lumen Verde Bienestar:** `comercial@lumenverde.co`
