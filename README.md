@@ -80,3 +80,34 @@ Las credenciales de acceso para las empresas de prueba son (Contrasena general: 
 - contacto@andespack.co
 - direccion@auracafe.co
 - comercial@lumenverde.co
+
+---
+
+## Estructura de Directorios
+
+La organizacion del repositorio sigue una separacion fisica estricta entre el cliente, el servidor y la persistencia de datos.
+
+```text
+PaginaWeb/
+|-- backend/
+|   |-- Contracts/          # DTOs y contratos HTTP de la API (Vista MVC)
+|   |-- Controllers/        # Endpoints de auth, vitrina, pedidos (Controlador MVC)
+|   |-- Repositories/       # Acceso a datos SQL Server (Modelo MVC)
+|   |-- Program.cs          # Configuracion de inyeccion de dependencias y middlewares
+|   `-- appsettings*.json   # Configuracion de entorno (cadenas de conexion, CORS)
+|
+|-- frontend/
+|   |-- public/assets/      # Recursos estaticos e imagenes de muestra
+|   |-- src/app/core/       # Interfaces (Modelos), servicios HTTP y estructuras (Pilas/Colas)
+|   |-- src/app/features/   # Modulos funcionales (auth, businesses, cart, customers, marketplace)
+|   |-- src/app/layout/     # Envoltura principal de la interfaz y barra de navegacion
+|   |-- app.routes.ts       # Definicion del enrutador del cliente (Rutas)
+|   `-- nginx.conf          # Configuracion del proxy reverso para despliegue
+|
+|-- database/
+|   `-- sqlserver/
+|       |-- init.sql        # Definicion DDL (Tablas) y DML (Datos semilla)
+|       `-- docker-init.sql # Orquestacion de inicializacion automatica para contenedores
+|
+`-- docker-compose.yml      # Definicion de servicios, puertos y dependencias de infraestructura
+```
