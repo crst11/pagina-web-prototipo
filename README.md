@@ -1,85 +1,82 @@
 # PaginaWebLocalShop - Marketplace Multiempresa (B2B)
 
-Aplicación web profesional (Marketplace) diseñada para conectar microempresas con compradores corporativos. Permite que cualquier empresario registre su empresa, gestione su catálogo de productos y reciba pedidos en un entorno multiempresa unificado.
+Aplicacion web orientada a conectar microempresas con compradores corporativos. Permite registrar empresas, gestionar un catalogo de productos y recibir pedidos en un entorno multiempresa unificado.
 
-## 🏗️ Arquitectura del Proyecto (Patrón MVC)
+## Funcionalidad del Codigo
 
-El proyecto está diseñado bajo una arquitectura limpia utilizando el patrón **Modelo-Vista-Controlador (MVC)**, aplicado y adaptado tanto en el backend como en el frontend para garantizar escalabilidad, separación de responsabilidades y facilidad de mantenimiento.
+El sistema opera dividiendo la logica entre un cliente interactivo y un servidor que expone servicios. 
+- **Frontend**: Administra las sesiones de usuario en el almacenamiento local del navegador, captura la interaccion del usuario mediante formularios, y gestiona el carrito de compras a nivel local hasta la confirmacion del pedido.
+- **Backend**: Actua como guarderia de datos y reglas de negocio. Recibe solicitudes HTTP del cliente, verifica permisos de seguridad, ejecuta validaciones de integridad, y persiste datos de manera permanente.
 
-### Backend (.NET 8)
+## Arquitectura del Proyecto (Patron MVC)
 
-| Capa MVC | Implementación en el Proyecto | Responsabilidad |
-|---|---|---|
-| **Modelo** | `Repositories/IStoreRepository.cs` y `SqlStoreRepository.*.cs` | Encapsula el acceso a datos. Define y ejecuta todas las operaciones directas contra SQL Server usando ODBC para máximo rendimiento. Las transacciones y la validación de integridad referencial ocurren aquí. |
-| **Vista** | Contratos (`Contracts/`) como DTOs y Requests | Representan las estructuras de datos exactas que la API expone o recibe. Son los objetos inmutables que viajan por HTTP (JSON) definiendo cómo se "ven" los datos para el cliente. |
-| **Controlador** | `Controllers/*.cs` (ej: `AuthController`, `OrdersController`) | Reciben las solicitudes HTTP, validan los datos básicos de entrada, autorizan mediante tokens y delegan la lógica pura al Repositorio. No contienen reglas de acceso a datos. |
+El proyecto utiliza el patron Modelo-Vista-Controlador (MVC) implementado en ambas capas de la aplicacion para mantener una separacion de responsabilidades estricta.
 
-### Frontend (Angular 17)
+### Implementacion MVC en Backend (.NET 8)
 
-| Capa MVC | Implementación en el Proyecto | Responsabilidad |
-|---|---|---|
-| **Modelo** | `core/models/*.ts` y `core/services/*.ts` | Definen las interfaces TypeScript (tipado fuerte) y los servicios Angular (`Injectables`) que gestionan la comunicación HTTP con el backend y el estado global (ej. sesión en `localStorage`). |
-| **Vista** | `*.html` y `*.css` de cada componente | Las plantillas HTML dinámicas que renderizan los datos al usuario. Utilizan un diseño modular basado en "features" (carrito, auth, catálogo). |
-| **Controlador** | `*.ts` de cada componente (Clases TypeScript) | Interceptan los eventos del usuario (clics, envíos de formulario), llaman a los servicios (Modelo) y actualizan las propiedades enlazadas a la Vista. |
+- **Modelo**: Constituido por `Repositories/IStoreRepository.cs` y su implementacion `SqlStoreRepository.*.cs`. Define y ejecuta todas las operaciones directas contra SQL Server usando ODBC. Controla las transacciones y la validacion de datos a nivel de base de datos.
+- **Vista**: Compuesta por los contratos y DTOs ubicados en el directorio `Contracts/`. Estos objetos representan las estructuras de datos que la API recibe o devuelve via HTTP (JSON).
+- **Controlador**: Clases ubicadas en `Controllers/` (ej: `AuthController`, `OrdersController`). Su responsabilidad es interceptar las solicitudes HTTP, validar parametros de entrada, revisar tokens de autorizacion y delegar la logica al repositorio.
 
----
+### Implementacion MVC en Frontend (Angular 17)
 
-## 🧠 Estructuras de Datos Aplicadas
+- **Modelo**: Definido por los archivos de interfaces en `core/models/*.ts` y los servicios en `core/services/*.ts`. Gestionan la definicion de tipos de datos, el almacenamiento de estado local (como el token de sesion) y la interaccion con la API REST.
+- **Vista**: Correspondiente a las plantillas HTML y hojas de estilo CSS en la raiz de cada componente. Proveen la interfaz visual y capturan los eventos del usuario.
+- **Controlador**: Representado por las clases TypeScript de los componentes (`*.ts`). Interceptan las acciones de la vista, invocan a los servicios del modelo, y actualizan las propiedades que alteran la interfaz.
 
-Para resolver problemas específicos de lógica de negocio y mejorar la experiencia del usuario, el frontend implementa estructuras de datos clásicas:
+## Interaccion mediante API REST
 
-1. **Pila (Stack) - LIFO (Last-In, First-Out)**
-   - **Ubicación:** `frontend/src/app/core/structures/stack.ts`
-   - **Uso:** Implementada para registrar el historial de acciones del usuario en el carrito de compras (agregar producto, eliminar producto, cambiar cantidades). Permite la funcionalidad de "Deshacer" (Undo) revirtiendo el estado al paso inmediatamente anterior.
+La comunicacion entre el frontend y el backend se realiza mediante servicios API REST sin estado (stateless).
+- El frontend realiza peticiones HTTP (GET, POST, PUT, DELETE) hacia endpoints especificos del backend.
+- La transferencia de datos utiliza formato JSON.
+- Para operaciones protegidas, el frontend envia tokens de sesion en las cabeceras HTTP (`X-Owner-Token` para cuentas empresariales y `X-Customer-Token` para clientes compradores).
+- El backend procesa la peticion y responde con codigos de estado HTTP estandar (ej: 200 OK, 201 Created, 400 Bad Request, 401 Unauthorized) junto con el cuerpo de la respuesta en JSON.
 
-2. **Cola (Queue) - FIFO (First-In, First-Out)**
-   - **Ubicación:** `frontend/src/app/core/structures/queue.ts`
-   - **Uso:** Implementada para gestionar el sistema de notificaciones en pantalla (Toasts/Alerts). Garantiza que los mensajes de error o éxito se procesen y muestren al usuario en el orden exacto en que ocurrieron.
+## Estructuras de Datos Especificas
 
----
+El frontend implementa el uso de estructuras de datos clasicas:
 
-## 🚀 Características Principales
+- **Pila (Stack) - LIFO**: Ubicada en `frontend/src/app/core/structures/stack.ts`. Registra el historial de acciones en el carrito de compras, posibilitando una funcion de reversion de cambios (Undo).
+- **Cola (Queue) - FIFO**: Ubicada en `frontend/src/app/core/structures/queue.ts`. Administra el sistema de notificaciones de pantalla, garantizando que los mensajes se rendericen en estricto orden cronologico.
 
-- **Multiempresa (Tenancy):** Registro de múltiples empresas con sesiones, productos y credenciales independientes.
-- **Carrito y Checkout Global:** El cliente puede agregar productos de diferentes empresas en un solo carrito; el sistema genera pedidos individuales (split-orders) automáticamente en el backend.
-- **Seguridad:** Autenticación por Tokens (`X-Owner-Token` y `X-Customer-Token`). Hasheo de contraseñas con `PBKDF2` y `salt` criptográfico en SQL Server.
-- **Borrado Lógico (Soft Bench):** Los productos pueden archivarse para mantener intacto el historial de facturación y pedidos de la empresa.
+## Rutas y Endpoints
 
----
+### Frontend (Rutas de Navegacion)
+Definidas en `frontend/src/app/app.routes.ts`:
+- `/`: Vitrina principal publica.
+- `/productos`: Listado general de productos destacados.
+- `/vitrina`: Catalogo avanzado de productos con opciones de filtrado.
+- `/empresas`: Directorio de empresas registradas en la plataforma.
+- `/empresa/:slug`: Perfil publico de una empresa en particular.
+- `/portal`: Interfaz de autenticacion y administracion privada para empresas.
+- `/cliente`: Interfaz de autenticacion e historial de ordenes para compradores.
+- `/carrito`: Visualizacion y gestion de los productos pre-seleccionados.
+- `/pago`: Vista de confirmacion final e ingreso de datos logisticos (Checkout).
 
-## 🛠️ Stack Tecnológico
+### Backend (Endpoints Principales)
+Controladores en `Controllers/`:
+- **StoreController** (`GET /api/store/overview`): Suministra el resumen publico de la plataforma.
+- **AuthController** (`POST /api/auth/register`, `POST /api/auth/login`): Gestiona la identidad y autenticacion empresarial.
+- **AdminController** (`GET /api/admin/catalog`, `POST /api/admin/products`): Facilita la administracion privada del inventario.
+- **CustomersController** (`POST /api/customers/register`, `POST /api/customers/login`): Administracion de cuentas y accesos para compradores.
+- **OrdersController** (`POST /api/orders/checkout`): Gestiona el procesamiento transaccional del carrito dividiendo ordenes por proveedor.
 
-- **Frontend:** Angular 17, TypeScript, CSS3 puro (sin frameworks externos para máximo control), Nginx (Proxy Reverso y Servidor SPA).
-- **Backend:** C#, .NET 8 (ASP.NET Core Web API).
-- **Base de Datos:** SQL Server 2022. Acceso a datos de alto rendimiento mediante ADO.NET (ODBC).
-- **Infraestructura:** Docker y Docker Compose para orquestación del entorno de desarrollo.
+## Ejecucion del Entorno
 
----
+La ejecucion local del proyecto esta estandarizada mediante Docker Compose. Este metodo inicializa el frontend, la API y la base de datos SQL Server pre-cargada con datos de demostracion.
 
-## ⚙️ Guía de Ejecución Rápida (Docker)
-
-La forma recomendada de ejecutar el proyecto es mediante Docker Compose, lo cual despliega la base de datos (con datos y empresas de prueba), el backend y el frontend automáticamente.
-
-1. Asegúrate de tener Docker Desktop iniciado.
-2. Abre una terminal en la raíz del proyecto y ejecuta:
-
+1. Iniciar terminal en el directorio principal del proyecto.
+2. Ejecutar el comando de construccion y despliegue:
 ```bash
 docker compose up --build -d
 ```
+3. Direcciones de acceso local:
+   - Frontend: `http://localhost:4200`
+   - Backend API: `http://localhost:5057`
+   - SQL Server: `localhost:14333`
 
-3. El proyecto estará disponible en:
-   - **Frontend (Marketplace):** [http://localhost:4200](http://localhost:4200)
-   - **Backend (API Base URL):** [http://localhost:5057](http://localhost:5057)
-   - **Swagger / Health Check:** [http://localhost:5057/health](http://localhost:5057/health)
-
-*(Nota: El script inicial de Docker crea automáticamente la base de datos e inserta 3 empresas de prueba funcionales).*
-
----
-
-## 🧪 Datos de Prueba Incluidos
-
-Puedes iniciar sesión en el portal empresarial con cualquiera de las siguientes cuentas pre-configuradas (La contraseña para todas es `Empresa2026!`):
-
-- **Andes Pack Studio:** `contacto@andespack.co`
-- **Aura Café Ejecutivo:** `direccion@auracafe.co`
-- **Lumen Verde Bienestar:** `comercial@lumenverde.co`
+### Datos de Prueba Pre-configurados
+Las credenciales de acceso para las empresas de prueba son (Contrasena general: `Empresa2026!`):
+- contacto@andespack.co
+- direccion@auracafe.co
+- comercial@lumenverde.co
