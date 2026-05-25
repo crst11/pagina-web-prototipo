@@ -14,8 +14,8 @@ namespace TiendaMicroempresas.Api.Repositories;
 public sealed partial class SqlStoreRepository(IConfiguration configuration) : IStoreRepository
 {
 
-    private readonly string _connectionString = configuration.GetConnectionString("Supabase")
-        ?? throw new InvalidOperationException("No se encontro la cadena de conexion Supabase.");
+    private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("No se encontro la cadena de conexion DefaultConnection.");
 
     private static string DefaultLogoUrl => "/assets/images/store1.png";
 
