@@ -13,14 +13,26 @@ public sealed partial class SqlStoreRepository
     {
         var builder = new NpgsqlConnectionStringBuilder(_connectionString);
 
-        // Force IPv4 resolution: Render free tier cannot reach IPv6 addresses.
-        var hostEntry = System.Net.Dns.GetHostEntry(builder.Host!);
-        var ipv4 = hostEntry.AddressList
-            .FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+        // CRITICAL: Force port 6543 (transaction-mode pooler, IPv4-only).
+        // Render environment variables may override appsettings.json with port 5432
+        // which resolves to an unreachable IPv6 address on Render's free tier.
+        builder.Port = 6543;
 
-        if (ipv4 != null)
+        // Force IPv4 resolution: Render free tier cannot reach IPv6 addresses.
+        try
         {
-            builder.Host = ipv4.ToString();
+            var hostEntry = System.Net.Dns.GetHostEntry(builder.Host!);
+            var ipv4 = hostEntry.AddressList
+                .FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+
+            if (ipv4 != null)
+            {
+                builder.Host = ipv4.ToString();
+            }
+        }
+        catch
+        {
+            // If DNS resolution fails, try with the original hostname
         }
 
         var connection = new NpgsqlConnection(builder.ConnectionString);
