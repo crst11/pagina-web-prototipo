@@ -11,7 +11,19 @@ public sealed partial class SqlStoreRepository
 {
     private NpgsqlConnection CreateOpenConnection()
     {
-        var connection = new NpgsqlConnection(_connectionString);
+        var builder = new NpgsqlConnectionStringBuilder(_connectionString);
+
+        // Force IPv4 resolution: Render free tier cannot reach IPv6 addresses.
+        var hostEntry = System.Net.Dns.GetHostEntry(builder.Host!);
+        var ipv4 = hostEntry.AddressList
+            .FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+
+        if (ipv4 != null)
+        {
+            builder.Host = ipv4.ToString();
+        }
+
+        var connection = new NpgsqlConnection(builder.ConnectionString);
         connection.Open();
         return connection;
     }
