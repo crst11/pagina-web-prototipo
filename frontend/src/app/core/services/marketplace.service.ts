@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment.development';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -8,7 +9,7 @@ import { MarketplaceSnapshot } from '../models/marketplace.models';
 @Injectable({ providedIn: 'root' })
 export class MarketplaceService {
   private readonly http = inject(HttpClient);
-  private readonly api = '/api';
+  private readonly api = environment.apiUrl;
 
   async getMarketplaceSnapshot(): Promise<MarketplaceSnapshot> {
     try {

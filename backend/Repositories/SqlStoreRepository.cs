@@ -1,5 +1,5 @@
 using System.Data;
-using System.Data.Odbc;
+using Npgsql;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -14,8 +14,8 @@ namespace TiendaMicroempresas.Api.Repositories;
 public sealed partial class SqlStoreRepository(IConfiguration configuration) : IStoreRepository
 {
 
-    private readonly string _connectionString = configuration.GetConnectionString("SqlServer")
-        ?? throw new InvalidOperationException("No se encontro la cadena de conexion SqlServer.");
+    private readonly string _connectionString = configuration.GetConnectionString("Supabase")
+        ?? throw new InvalidOperationException("No se encontro la cadena de conexion Supabase.");
 
     private static string DefaultLogoUrl => "/assets/images/store1.png";
 

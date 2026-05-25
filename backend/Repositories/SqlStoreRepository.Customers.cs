@@ -1,5 +1,5 @@
 using System.Data;
-using System.Data.Odbc;
+using Npgsql;
 using TiendaMicroempresas.Api.Contracts.Customers;
 
 namespace TiendaMicroempresas.Api.Repositories;
@@ -32,8 +32,8 @@ public sealed partial class SqlStoreRepository
                 Address,
                 AuthProvider
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-            SELECT CAST(SCOPE_IDENTITY() AS INT);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING CustomerId;
             """,
             RequireText(request.FullName, "Ingresa el nombre completo del comprador."),
             normalizedEmail,
@@ -162,7 +162,7 @@ public sealed partial class SqlStoreRepository
             orders));
     }
 
-    private Task<CustomerAuthResponse> CreateCustomerSessionResponseAsync(OdbcConnection connection, int customerId)
+    private Task<CustomerAuthResponse> CreateCustomerSessionResponseAsync(NpgsqlConnection connection, int customerId)
     {
         var token = Guid.NewGuid().ToString("N");
         ExecuteNonQuery(
@@ -170,7 +170,7 @@ public sealed partial class SqlStoreRepository
             null,
             """
             INSERT INTO dbo.CustomerSessions (CustomerId, SessionToken, ExpiresAt)
-            VALUES (?, ?, DATEADD(DAY, 14, SYSDATETIME()));
+            VALUES (?, ?, CURRENT_TIMESTAMP + INTERVAL '14 days');
             """,
             customerId,
             token);

@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment.development';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -10,7 +11,7 @@ import { SessionService } from './session.service';
 export class CustomerService {
   private readonly http = inject(HttpClient);
   private readonly session = inject(SessionService);
-  private readonly api = '/api';
+  private readonly api = environment.apiUrl;
 
   // Lectura publica del token de cliente (usado por CartService al iniciar sesion).
   readCurrentCustomerToken(): string | null {

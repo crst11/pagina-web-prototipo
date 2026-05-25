@@ -1,5 +1,5 @@
 using System.Data;
-using System.Data.Odbc;
+using Npgsql;
 using TiendaMicroempresas.Api.Contracts.Auth;
 using TiendaMicroempresas.Api.Contracts.Store;
 
@@ -45,8 +45,8 @@ public sealed partial class SqlStoreRepository
                 BannerUrl,
                 WebsiteUrl
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            SELECT CAST(SCOPE_IDENTITY() AS INT);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING BusinessId;
             """,
             BuildUniqueSlug(connection, null, businessName, null),
             RequireText(request.OwnerName, "Ingresa el nombre de la persona responsable."),
@@ -141,7 +141,7 @@ public sealed partial class SqlStoreRepository
                 LogoUrl = ?,
                 BannerUrl = ?,
                 WebsiteUrl = ?,
-                UpdatedAt = SYSDATETIME()
+                UpdatedAt = CURRENT_TIMESTAMP
             WHERE BusinessId = ?;
             """,
             BuildUniqueSlug(connection, null, businessName, businessId),
@@ -197,7 +197,7 @@ public sealed partial class SqlStoreRepository
         return Task.CompletedTask;
     }
 
-    private Task<AuthResponse> CreateSessionResponseAsync(OdbcConnection connection, int businessId)
+    private Task<AuthResponse> CreateSessionResponseAsync(NpgsqlConnection connection, int businessId)
     {
         var token = Guid.NewGuid().ToString("N");
         ExecuteNonQuery(
@@ -205,7 +205,7 @@ public sealed partial class SqlStoreRepository
             null,
             """
             INSERT INTO dbo.BusinessSessions (BusinessId, SessionToken, ExpiresAt)
-            VALUES (?, ?, DATEADD(DAY, 7, SYSDATETIME()));
+            VALUES (?, ?, CURRENT_TIMESTAMP + INTERVAL '7 days');
             """,
             businessId,
             token);

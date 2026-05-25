@@ -1,4 +1,4 @@
-using System.Data.Odbc;
+using Npgsql;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -9,20 +9,35 @@ namespace TiendaMicroempresas.Api.Repositories;
 // conexion, construccion de comandos, validaciones de entrada, hash de contrasenas y slugs.
 public sealed partial class SqlStoreRepository
 {
-    private OdbcConnection CreateOpenConnection()
+    private NpgsqlConnection CreateOpenConnection()
     {
-        var connection = new OdbcConnection(_connectionString);
+        var connection = new NpgsqlConnection(_connectionString);
         connection.Open();
         return connection;
     }
 
-    // Genera y parametriza un OdbcCommand listo para ejecutar.
-    private static OdbcCommand CreateCommand(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+    // Genera y parametriza un NpgsqlCommand listo para ejecutar.
+    private static NpgsqlCommand CreateCommand(
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         string sql,
         params object?[] values)
     {
+        if (values.Length > 0)
+        {
+            var parts = sql.Split('?');
+            if (parts.Length - 1 == values.Length)
+            {
+                var sb = new StringBuilder();
+                for (int i = 0; i < parts.Length - 1; i++)
+                {
+                    sb.Append(parts[i]).Append($"${i + 1}");
+                }
+                sb.Append(parts[^1]);
+                sql = sb.ToString();
+            }
+        }
+
         var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = sql;
@@ -35,7 +50,7 @@ public sealed partial class SqlStoreRepository
         return command;
     }
 
-    private static void AddParameter(OdbcCommand command, object? value)
+    private static void AddParameter(NpgsqlCommand command, object? value)
     {
         var parameter = command.CreateParameter();
         parameter.Value = value ?? DBNull.Value;
@@ -43,8 +58,8 @@ public sealed partial class SqlStoreRepository
     }
 
     private static object? ExecuteScalar(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         string sql,
         params object?[] values)
     {
@@ -53,8 +68,8 @@ public sealed partial class SqlStoreRepository
     }
 
     private static int InsertAndGetId(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         string sql,
         params object?[] values)
     {
@@ -63,8 +78,8 @@ public sealed partial class SqlStoreRepository
     }
 
     private static int ExecuteNonQuery(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         string sql,
         params object?[] values)
     {
@@ -75,8 +90,8 @@ public sealed partial class SqlStoreRepository
     // Verifica que el correo no este ya registrado en Businesses.
     // Si excludedBusinessId tiene valor, omite esa empresa de la comprobacion (edicion de perfil).
     private static void EnsureEmailAvailable(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         string email,
         int? excludedBusinessId)
     {
@@ -102,8 +117,8 @@ public sealed partial class SqlStoreRepository
     }
 
     private static void EnsureCustomerEmailAvailable(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         string email,
         int? excludedCustomerId)
     {
@@ -129,8 +144,8 @@ public sealed partial class SqlStoreRepository
     }
 
     private static void EnsureBusinessNameAvailable(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         string businessName,
         int? excludedBusinessId)
     {
@@ -158,8 +173,8 @@ public sealed partial class SqlStoreRepository
     // Construye un slug unico basado en el nombre de la empresa.
     // Si ya existe uno identico, agrega un sufijo numerico incremental.
     private static string BuildUniqueSlug(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         string businessName,
         int? excludedBusinessId)
     {
@@ -182,8 +197,8 @@ public sealed partial class SqlStoreRepository
     }
 
     private static bool SlugExists(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         string slug,
         int? excludedBusinessId)
     {

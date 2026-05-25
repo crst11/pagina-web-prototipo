@@ -1,4 +1,4 @@
-using System.Data.Odbc;
+using Npgsql;
 using System.Globalization;
 using TiendaMicroempresas.Api.Contracts.Orders;
 
@@ -78,8 +78,8 @@ public sealed partial class SqlStoreRepository
     // Crea un pedido para una sola empresa dentro de una transaccion activa.
     // Valida stock, pedido minimo y descuenta inventario por cada linea.
     private static CreatedOrderResult CreateBusinessOrder(
-        OdbcConnection connection,
-        OdbcTransaction transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
         int businessId,
         int? customerId,
         string fullName,
@@ -138,8 +138,8 @@ public sealed partial class SqlStoreRepository
                 Total,
                 PaymentMethod
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            SELECT CAST(SCOPE_IDENTITY() AS INT);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING OrderId;
             """,
             customerId,
             businessId,
@@ -173,7 +173,7 @@ public sealed partial class SqlStoreRepository
                 transaction,
                 """
                 UPDATE dbo.Products
-                SET Stock = Stock - ?, UpdatedAt = SYSDATETIME()
+                SET Stock = Stock - ?, UpdatedAt = CURRENT_TIMESTAMP
                 WHERE ProductId = ? AND IsArchived = 0;
                 """,
                 line.Quantity,

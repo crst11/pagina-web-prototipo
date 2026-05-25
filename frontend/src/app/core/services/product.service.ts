@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment.development';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -13,7 +14,7 @@ export class ProductService {
   private readonly http = inject(HttpClient);
   private readonly session = inject(SessionService);
   private readonly authService = inject(AuthService);
-  private readonly api = '/api';
+  private readonly api = environment.apiUrl;
 
   async saveProduct(payload: UpsertBusinessProductRequest, productId?: number): Promise<MarketplaceBusiness> {
     const token = this.requireOwnerToken();

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Npgsql;
 using TiendaMicroempresas.Api.Contracts.Auth;
 using TiendaMicroempresas.Api.Contracts.Customers;
 using TiendaMicroempresas.Api.Contracts.Orders;
@@ -39,7 +40,7 @@ public sealed class CustomersController(IStoreRepository repository) : Controlle
         {
             return BadRequest(new { message = exception.Message });
         }
-        catch (OdbcException)
+        catch (NpgsqlException)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "La base de datos de clientes no esta disponible." });
         }
@@ -65,7 +66,7 @@ public sealed class CustomersController(IStoreRepository repository) : Controlle
         {
             return BadRequest(new { message = exception.Message });
         }
-        catch (OdbcException)
+        catch (NpgsqlException)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "La base de datos de clientes no esta disponible." });
         }
@@ -91,7 +92,7 @@ public sealed class CustomersController(IStoreRepository repository) : Controlle
         {
             return Unauthorized(new { message = exception.Message });
         }
-        catch (OdbcException)
+        catch (NpgsqlException)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "La base de datos de clientes no esta disponible." });
         }
@@ -119,7 +120,7 @@ public sealed class CustomersController(IStoreRepository repository) : Controlle
         {
             return BadRequest(new { message = exception.Message });
         }
-        catch (OdbcException)
+        catch (NpgsqlException)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "La base de datos de clientes no esta disponible." });
         }
@@ -146,7 +147,7 @@ public sealed class CustomersController(IStoreRepository repository) : Controlle
         {
             return BadRequest(new { message = exception.Message });
         }
-        catch (OdbcException)
+        catch (NpgsqlException)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "La base de datos de clientes no esta disponible." });
         }
@@ -186,7 +187,7 @@ public sealed class CustomersController(IStoreRepository repository) : Controlle
         {
             return Unauthorized(new { message = exception.Message });
         }
-        catch (OdbcException)
+        catch (NpgsqlException)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "La base de datos de clientes no esta disponible." });
         }

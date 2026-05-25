@@ -1,4 +1,4 @@
-using System.Data.Odbc;
+using Npgsql;
 using TiendaMicroempresas.Api.Contracts.Products;
 using TiendaMicroempresas.Api.Contracts.Store;
 
@@ -102,8 +102,8 @@ public sealed partial class SqlStoreRepository
                 IsFeatured,
                 IsPublished
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            SELECT CAST(SCOPE_IDENTITY() AS INT);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING ProductId;
             """,
             businessId,
             RequireText(request.Name, "Ingresa un nombre para el producto."),
@@ -141,7 +141,7 @@ public sealed partial class SqlStoreRepository
                 ImageUrl = ?,
                 IsFeatured = ?,
                 IsPublished = ?,
-                UpdatedAt = SYSDATETIME()
+                UpdatedAt = CURRENT_TIMESTAMP
             WHERE ProductId = ? AND BusinessId = ? AND IsArchived = 0;
             """,
             RequireText(request.Name, "Ingresa un nombre para el producto."),
@@ -181,7 +181,7 @@ public sealed partial class SqlStoreRepository
                 IsPublished = 0,
                 IsFeatured = 0,
                 Stock = 0,
-                UpdatedAt = SYSDATETIME()
+                UpdatedAt = CURRENT_TIMESTAMP
             WHERE ProductId = ? AND BusinessId = ? AND IsArchived = 0;
             """,
             productId,

@@ -1,5 +1,5 @@
 using System.Data;
-using System.Data.Odbc;
+using Npgsql;
 using TiendaMicroempresas.Api.Contracts.Customers;
 using TiendaMicroempresas.Api.Contracts.Orders;
 using TiendaMicroempresas.Api.Contracts.Products;
@@ -14,8 +14,8 @@ public sealed partial class SqlStoreRepository
     // Lee todas las empresas activas. Si publishedOnly es true, omite productos no publicados.
     // Si businessId tiene valor, filtra a una sola empresa.
     private static List<MarketplaceBusinessDto> GetBusinesses(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         bool publishedOnly,
         int? businessId)
     {
@@ -121,8 +121,8 @@ public sealed partial class SqlStoreRepository
     }
 
     private static MarketplaceBusinessDto GetBusinessById(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         int businessId,
         bool publishedOnly)
     {
@@ -132,8 +132,8 @@ public sealed partial class SqlStoreRepository
 
     // Lee un producto verificando que pertenezca a la empresa del token activo.
     private static ProductDto GetOwnedProductById(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         int businessId,
         int productId)
     {
@@ -169,8 +169,8 @@ public sealed partial class SqlStoreRepository
     }
 
     private static CustomerDto GetCustomerById(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         int customerId)
     {
         using var command = CreateCommand(
@@ -202,8 +202,8 @@ public sealed partial class SqlStoreRepository
     // Resuelve el BusinessId a partir del token de sesion activo.
     // Lanza excepcion si el token no existe o ya expiro.
     private static int GetBusinessIdByToken(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         string token)
     {
         using var command = CreateCommand(
@@ -212,7 +212,7 @@ public sealed partial class SqlStoreRepository
             """
             SELECT BusinessId
             FROM dbo.BusinessSessions
-            WHERE SessionToken = ? AND ExpiresAt > SYSDATETIME();
+            WHERE SessionToken = ? AND ExpiresAt > CURRENT_TIMESTAMP;
             """,
             token);
 
@@ -227,8 +227,8 @@ public sealed partial class SqlStoreRepository
 
     // Resuelve el CustomerId a partir del token de sesion activo.
     private static int GetCustomerIdByToken(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         string token)
     {
         using var command = CreateCommand(
@@ -237,7 +237,7 @@ public sealed partial class SqlStoreRepository
             """
             SELECT CustomerId
             FROM dbo.CustomerSessions
-            WHERE SessionToken = ? AND ExpiresAt > SYSDATETIME();
+            WHERE SessionToken = ? AND ExpiresAt > CURRENT_TIMESTAMP;
             """,
             token);
 
@@ -251,8 +251,8 @@ public sealed partial class SqlStoreRepository
     }
 
     private static BusinessOrderPolicy GetBusinessOrderPolicy(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         int businessId)
     {
         using var command = CreateCommand(
@@ -271,8 +271,8 @@ public sealed partial class SqlStoreRepository
     }
 
     private static ProductOrderData GetProductForOrder(
-        OdbcConnection connection,
-        OdbcTransaction transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
         int businessId,
         int productId)
     {
@@ -303,8 +303,8 @@ public sealed partial class SqlStoreRepository
 
     // Lee todos los pedidos de una empresa con sus items. Marca los nuevos como vistos.
     private static List<BusinessOrderDto> GetBusinessOrdersFeed(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         int businessId)
     {
         var orders = new Dictionary<int, BusinessOrderBuilder>();
@@ -363,7 +363,7 @@ public sealed partial class SqlStoreRepository
             """
             UPDATE dbo.Orders
             SET IsNew = 0,
-                ViewedAt = COALESCE(ViewedAt, SYSDATETIME())
+                ViewedAt = COALESCE(ViewedAt, CURRENT_TIMESTAMP)
             WHERE BusinessId = ? AND IsNew = 1;
             """,
             businessId);
@@ -410,8 +410,8 @@ public sealed partial class SqlStoreRepository
 
     // Lee el historial de pedidos de un cliente con sus items.
     private static List<CustomerOrderDto> GetCustomerOrdersFeed(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         int customerId)
     {
         var orders = new Dictionary<int, CustomerOrderBuilder>();
@@ -500,8 +500,8 @@ public sealed partial class SqlStoreRepository
     }
 
     private static void EnsureProductOwnership(
-        OdbcConnection connection,
-        OdbcTransaction? transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
         int businessId,
         int productId)
     {
